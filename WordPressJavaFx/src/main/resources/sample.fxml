@@ -56,11 +56,11 @@
 
     <TitledPane fx:id="RightTextFieldTitledPane" alignment="CENTER" GridPane.rowIndex="0"
           GridPane.columnIndex="2" GridPane.columnSpan="2"
-          GridPane.rowSpan="1"
+          GridPane.rowSpan="2"
           prefWidth="300" maxWidth="400" collapsible="false" text="Header and Content"
           GridPane.valignment="BOTTOM">
         <GridPane.margin>
-            <Insets top="10" right="10" bottom="10" left="10">
+            <Insets top="0" right="10" bottom="0" left="10">
 
             </Insets>
         </GridPane.margin>
@@ -74,7 +74,7 @@
                 </padding>
             <children>
                 <TextField fx:id="headerField" prefHeight="20" prefWidth="400" maxWidth="400" GridPane.columnSpan="2"/>
-                <TextField fx:id="contentField" prefHeight="100" prefWidth="400" maxWidth="400" GridPane.columnSpan="2"/>
+                <TextArea fx:id="contentField" prefHeight="300" prefWidth="400" maxWidth="400" GridPane.columnSpan="2"/>
             </children>
             </VBox>
 
@@ -91,10 +91,17 @@
 
             </Button>
 
-            <Button fx:id="submitButton" text="Get Posts"
+            <Button fx:id="getPostButton" text="Get Posts"
                     prefWidth="80" prefHeight="30" defaultButton="true"
                     GridPane.halignment="LEFT"
                     onAction="#getThePosts">
+
+            </Button>
+
+            <Button fx:id="submitPostButton" text="Submit post"
+                    prefWidth="80" prefHeight="30" defaultButton="true"
+                    GridPane.halignment="LEFT"
+                    onAction="#submitPosts">
 
             </Button>
         </children>

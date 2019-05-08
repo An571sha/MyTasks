@@ -14,28 +14,25 @@ public class BlogPost {
     private URL xmlRpcUrl;
     private XmlRpcClient client;
     private int blogId = 161853477;
-    private List params;
+    private List<Object> params;
     private TreeMap<Object,Integer> postTitleandKeyMap;
 
     /**
      * @TODO
-     * 1. Make a map of list and values for blogpost title and id
-     * 2. UserInput Interface
-     * 3. To build a XML-RPC URL just add /xmlrpc.php at the ned of the web address
-     * We are going to achieve this using URI Builder in JAVA
+     *
      **/
 
-    public BlogPost(){
-        username = "thakursuryadeo";
-        password = "Test123456";
+    public BlogPost(String username, String password, String xmlRpcUrl){
+        this.username =username;
+        this.password =password;
+
         try {
-            xmlRpcUrl = new URL("https://animeshvideo.wordpress.com/xmlrpc.php");
+          this.xmlRpcUrl = new URL(xmlRpcUrl);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
         params = new ArrayList();
         client = setClientConfigForRpc();
-
 
     }
 
@@ -69,7 +66,7 @@ public class BlogPost {
         params.add(blogId);
         params.add(username);
         params.add(password);
-        List<Object> list = new ArrayList();
+        List<Object> list = new ArrayList<>();
 
         try {
 
