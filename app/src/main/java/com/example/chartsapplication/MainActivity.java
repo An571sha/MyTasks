@@ -5,11 +5,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.util.Log;
-
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -22,7 +22,6 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        CardView cardView = findViewById(R.id.card_view);
         setDecodedColors();
         initialiseLineChart();
         intialiseBarChart();
@@ -104,11 +102,10 @@ public class MainActivity extends AppCompatActivity {
         lineChart.setFadingEdgeLength(20);
         XAxis xAxis = lineChart.getXAxis();
         YAxis yAxis = lineChart.getAxisRight();
-
         yAxis.setEnabled(false);
-        xAxis.setDrawGridLines(false);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(true);
         xAxis.setDrawGridLinesBehindData(false);
-
         lineChart.invalidate();
 
     }
@@ -131,8 +128,11 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         xAxis.setValueFormatter(formatter);
-        xAxis.setGranularity(1.0f);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        Legend legend = barChart.getLegend();
+        legend.setEnabled(false);
         barChart.invalidate();
+
 
     }
 
@@ -146,6 +146,14 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setData(pieData);
         pieChart.setDrawSliceText(false);
         pieChart.setDrawHoleEnabled(false);
+        Legend legend = pieChart.getLegend();
+        legend.setFormSize(12);
+        legend.setTextSize(12);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
+        legend.setOrientation(Legend.LegendOrientation.VERTICAL);
+        legend.setXOffset(10);
+        legend.setYOffset(20);
         pieChart.invalidate();
     }
 
