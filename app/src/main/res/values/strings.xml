@@ -1,8 +1,19 @@
 <resources>
     <string name="app_name">ChartsApplication</string>
     <string name="action_settings">Settings</string>
-    <string name="action_add_favourite">Add to Favourites</string>
-    <string name="action_play_next">Play Next</string>
-    <string name="backdrop_title">LOVE MUSIC</string>
-    <string name="backdrop_subtitle">This season top 20 albums</string>
+    <string name="Entry_Count">Settings</string>
+    <string name="mood_1happy" translatable="false">&#xe900;</string>
+    <string name="mood_2smile" translatable="false">&#xe901;</string>
+    <string name="mood_3neutral" translatable="false">&#xe902;</string>
+    <string name="mood_4unhappy" translatable="false">&#xe903;</string>
+    <string name="mood_5teardrop" translatable="false">&#xe904;</string>
+    <string name="mood_none">Settings</string>
+    <string name="mood_1">Settings</string>
+    <string name="mood_2">Settings</string>
+    <string name="mood_3">Settings</string>
+    <string name="mood_4">Settings</string>
+    <string name="mood_5">Settings</string>
+
+
+
 </resources>

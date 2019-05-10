@@ -22,18 +22,29 @@
             android:layout_margin="@dimen/card_margin"
             app:cardElevation="15dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:layout_margin="@dimen/linear_layout_margin">
+
+            <TextView
+                android:id="@+id/textViewEntryCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/text_view_margin_left"
+                android:text="Entry Count" />
+
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:layout_margin="20dp"
+                android:layout_margin="@dimen/chart_margin"
                 android:padding="5dp"
-                android:paddingStart="5dp"
-                android:paddingLeft="5dp"
-                android:paddingTop="5dp"
-                android:paddingEnd="5dp"
-                android:paddingRight="5dp"
-                android:paddingBottom="5dp" />
+                />
+
+            </LinearLayout>
         </android.support.v7.widget.CardView>
 
         <android.support.v7.widget.CardView
@@ -42,16 +53,68 @@
             android:layout_margin="@dimen/card_margin"
             app:cardBackgroundColor="#E6E6E6"
             app:cardCornerRadius="8dp"
-            app:cardElevation="14dp">
+            app:cardElevation="15dp">
 
-            <com.github.mikephil.charting.charts.PieChart
-
-                android:id="@+id/pie_chart"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_gravity="center"
-                android:layout_margin="20dp"
-                android:padding="5dp" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:layout_margin="@dimen/linear_layout_margin">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="5dp"
+                android:layout_margin="@dimen/linear_layout_margin">
+                <TextView
+                    android:id="@+id/testTextView0"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+                <TextView
+                    android:id="@+id/testTextView1"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+                <TextView
+                    android:id="@+id/testTextView2"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+                <TextView
+                    android:id="@+id/testTextView3"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+                <TextView
+                    android:id="@+id/testTextView4"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:layout_height="wrap_content"
+                    android:text="TextView" />
+
+            </LinearLayout>
+
+                <TextView
+                android:id="@+id/textViewMoodCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/text_view_margin_left"
+                android:text="Mood Count" />
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pie_chart"
+                    android:layout_width="331dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="20dp"
+                    android:padding="5dp" />
+            </LinearLayout>
         </android.support.v7.widget.CardView>
 
         <android.support.v7.widget.CardView
@@ -62,11 +125,24 @@
             app:cardCornerRadius="8dp"
             app:cardElevation="15dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:layout_margin="@dimen/linear_layout_margin">
+
+            <TextView
+                android:id="@+id/textViewWeeklyEntryCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/text_view_margin_left"
+                android:text="Average Mood per Day" />
+
             <com.github.mikephil.charting.charts.BarChart
                 android:id="@+id/bar_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:layout_margin="20dp"
                 android:padding="5dp"
                 android:paddingStart="5dp"
                 android:paddingLeft="5dp"
@@ -74,8 +150,11 @@
                 android:paddingEnd="5dp"
                 android:paddingRight="5dp"
                 android:paddingBottom="5dp" />
-        </android.support.v7.widget.CardView>
-    </LinearLayout>
 
+            </LinearLayout>
+
+        </android.support.v7.widget.CardView>
+
+    </LinearLayout>
 
 </ScrollView>
