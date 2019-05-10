@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private List<Entry> entries;
     private List<BarEntry> barEntries;
     private List<PieEntry> pieEntries;
+    private int mTEXT_SIZE = 12;
     private int[] decodedColors;
 
     @Override
@@ -57,12 +58,21 @@ public class MainActivity extends AppCompatActivity {
     public void setDataForBarChart(){
         barEntries = new ArrayList<>();
         String[] weekdays = new String[] {"sunday","monday","tuesday","wednesday","thursday","friday","saturday"};
-        for(int i=0; i< weekdays.length; i++) {
-            int val = ThreadLocalRandom.current().nextInt(0, 20 + 1);
-            if(!weekdays[i].isEmpty()) {
-                barEntries.add(new BarEntry(i,val));
-            }
-        }
+//        for(int i=0; i< weekdays.length; i++) {
+//            int val = ThreadLocalRandom.current().nextInt(0, 20 + 1);
+//            if(!weekdays[i].isEmpty()) {
+//                barEntries.add(new BarEntry(i,val));
+//            }
+//        }
+
+          barEntries.add(new BarEntry(0,10));
+          barEntries.add(new BarEntry(1,0));
+          barEntries.add(new BarEntry(2,20));
+          barEntries.add(new BarEntry(3,30));
+          barEntries.add(new BarEntry(4,8));
+          barEntries.add(new BarEntry(5,7));
+          barEntries.add(new BarEntry(6,11));
+
     }
 
     public void setDataforPieChart(){
@@ -83,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
-
     public void initialiseLineChart(){
         setDataForLineChart();
         LineChart lineChart = findViewById(R.id.chart);
@@ -101,9 +110,12 @@ public class MainActivity extends AppCompatActivity {
         lineChart.setData(lineData);
         lineChart.setFadingEdgeLength(20);
         XAxis xAxis = lineChart.getXAxis();
+        YAxis yAxisLeft = lineChart.getAxisLeft();
         YAxis yAxis = lineChart.getAxisRight();
+        yAxisLeft.setTextSize(mTEXT_SIZE);
         yAxis.setEnabled(false);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(mTEXT_SIZE);
         xAxis.setDrawGridLines(true);
         xAxis.setDrawGridLinesBehindData(false);
         lineChart.invalidate();
@@ -120,7 +132,13 @@ public class MainActivity extends AppCompatActivity {
         barDataSet.setColors(decodedColors);
         BarData barData = new BarData(barDataSet);
         barChart.setData(barData);
+        barChart.getDescription().setEnabled(false);
         XAxis xAxis = barChart.getXAxis();
+        YAxis yAxis = barChart.getAxisRight();
+        yAxis.setEnabled(false);
+        YAxis yAxisLeft = barChart.getAxisLeft();
+        yAxisLeft.setTextSize(mTEXT_SIZE);
+        yAxisLeft.setSpaceBottom(0);
         ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
@@ -129,6 +147,8 @@ public class MainActivity extends AppCompatActivity {
         };
         xAxis.setValueFormatter(formatter);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setLabelRotationAngle(-35);
+        xAxis.setTextSize(mTEXT_SIZE);
         Legend legend = barChart.getLegend();
         legend.setEnabled(false);
         barChart.invalidate();
@@ -147,8 +167,8 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setDrawSliceText(false);
         pieChart.setDrawHoleEnabled(false);
         Legend legend = pieChart.getLegend();
-        legend.setFormSize(12);
-        legend.setTextSize(12);
+        legend.setFormSize(mTEXT_SIZE);
+        legend.setTextSize(mTEXT_SIZE);
         legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         legend.setOrientation(Legend.LegendOrientation.VERTICAL);
