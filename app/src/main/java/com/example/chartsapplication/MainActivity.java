@@ -6,8 +6,6 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +27,6 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
-import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.EntryXComparator;
 
@@ -49,26 +46,22 @@ public class MainActivity extends AppCompatActivity {
     private int mTEXT_SIZE = 12;
     private int[] decodedColors;
     private Typeface mMoodsFont;
-    private TextView testTextView0;
-    private TextView testTextView1;
-    private TextView testTextView2;
-    private TextView testTextView3;
-    private TextView testTextView4;
-    private Mood awesomeMood;
-    private Mood happyMood;
-    private Mood neutralMood;
-    private Mood badMood;
-    private Mood awfulMood;
+    private Mood mood;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         testTextViewArray = new ArrayList<>();
+        TextView testTextView0;
         testTextViewArray.add(testTextView0 = findViewById(R.id.testTextView0));
+        TextView testTextView1;
         testTextViewArray.add(testTextView1 = findViewById(R.id.testTextView1));
+        TextView testTextView2;
         testTextViewArray.add(testTextView2 = findViewById(R.id.testTextView2));
+        TextView testTextView3;
         testTextViewArray.add(testTextView3 = findViewById(R.id.testTextView3));
+        TextView testTextView4;
         testTextViewArray.add(testTextView4 = findViewById(R.id.testTextView4));
         mMoodsFont = ResourcesCompat.getFont( this, R.font.diaro_moods);
         setDecodedColors();
@@ -114,37 +107,26 @@ public class MainActivity extends AppCompatActivity {
         String[] moods = new String[] {"1","2","3","4","5"};
        for(int i=0; i< moods.length; i++) {
            int val = ThreadLocalRandom.current().nextInt(0, 30);
-           awesomeMood = new Mood(Integer.valueOf(moods[i]));
-           testTextViewArray.get(i).setText(awesomeMood.getFontResId());
+           mood = new Mood(Integer.valueOf(moods[i]));
+           testTextViewArray.get(i).setText(mood.getFontResId());
            testTextViewArray.get(i).setTypeface(mMoodsFont);
-           pieEntries.add(new PieEntry(val,awesomeMood.getFontResId()));
-           Log.i("fontResId",String.valueOf(awesomeMood.getFontResId()));
+           pieEntries.add(new PieEntry(val, mood.getFontResId()));
+           Log.i("fontResId",String.valueOf(mood.getFontResId()));
        }
     }
     public void initialiseLineChart(){
         setDataForLineChart();
         LineChart lineChart = findViewById(R.id.chart);
         LineDataSet lineDataSet = new LineDataSet(entries, "days");
-        lineDataSet.setColor(Color.BLUE);
-        lineDataSet.setDrawCircleHole(false);
-        lineDataSet.setDrawFilled(true);
-        lineDataSet.setLineWidth(1);
-        lineDataSet.setDrawCircles(false);
-        lineDataSet.setDrawValues(false);
-        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        lineDataSet.setDrawFilled(true);
-        lineDataSet.setFillColor(Color.LTGRAY);
+        lineDataSetproperties(lineDataSet);
         LineData lineData = new LineData(lineDataSet);
         lineChart.setData(lineData);
         lineChart.setFadingEdgeLength(20);
         XAxis xAxis = lineChart.getXAxis();
         YAxis yAxisLeft = lineChart.getAxisLeft();
         YAxis yAxis = lineChart.getAxisRight();
-        yAxisLeft.setTextSize(mTEXT_SIZE);
-        yAxis.setEnabled(false);
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setTextSize(mTEXT_SIZE);
-        xAxis.setDrawGridLines(true);
+        modifyYAxisforGraph(yAxisLeft,true,0 , mTEXT_SIZE);
+        modifyYAxisforGraph(yAxis,false,0, mTEXT_SIZE);
         xAxis.setDrawGridLinesBehindData(false);
         ValueFormatter valueFormatter = new ValueFormatter() {
             @Override
@@ -152,8 +134,7 @@ public class MainActivity extends AppCompatActivity {
                 return String.valueOf(-(int)value);
             }
         };
-        xAxis.setValueFormatter(valueFormatter);
-
+        modifyXAxisforGraph(xAxis,true,0,valueFormatter);
         lineChart.getDescription().setEnabled(false);
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
@@ -182,21 +163,16 @@ public class MainActivity extends AppCompatActivity {
         barChart.getDescription().setEnabled(false);
         XAxis xAxis = barChart.getXAxis();
         YAxis yAxis = barChart.getAxisRight();
-        yAxis.setEnabled(false);
         YAxis yAxisLeft = barChart.getAxisLeft();
-        yAxisLeft.setTextSize(mTEXT_SIZE);
-        yAxisLeft.setSpaceBottom(0);
+        modifyYAxisforGraph(yAxis,false,0,mTEXT_SIZE);
+        modifyYAxisforGraph(yAxisLeft,true,0,mTEXT_SIZE);
         ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
                 return weekDays.get((int)value);
             }
         };
-        xAxis.setValueFormatter(formatter);
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setLabelRotationAngle(-35);
-        xAxis.setTextSize(mTEXT_SIZE);
-        xAxis.setDrawGridLines(false);
+        modifyXAxisforGraph(xAxis,false,-35,formatter);
         Legend legend = barChart.getLegend();
         legend.setEnabled(false);
         barChart.setTouchEnabled(true);
@@ -216,17 +192,8 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setDrawSliceText(false);
         pieChart.setDrawHoleEnabled(false);
         Legend legend = pieChart.getLegend();
-        legend.setFormSize(mTEXT_SIZE);
-        legend.setTextSize(mTEXT_SIZE);
         legend.setTypeface(mMoodsFont);
-        Log.i("typeface",legend.getTypeface().toString());
-        pieChart.setEntryLabelTypeface(mMoodsFont);
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.CENTER);
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
-        legend.setOrientation(Legend.LegendOrientation.VERTICAL);
-        legend.setYOffset(-25);
-
-        Log.i("legendEntries",legend.getEntries().toString());
+        setLegendProperties(legend,true,mTEXT_SIZE,-25, Legend.LegendVerticalAlignment.CENTER, Legend.LegendHorizontalAlignment.LEFT, Legend.LegendOrientation.VERTICAL);
         pieChart.getDescription().setEnabled(false);
         pieChart.invalidate();
     }
@@ -251,6 +218,50 @@ public class MainActivity extends AppCompatActivity {
                     (int)e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
         }
     }
+
+    /** all the methods here can be expanded as we introduce properties in the graph **/
+
+    public void modifyXAxisforGraph(XAxis xAxis, Boolean gridlines, float labelRotationAngel, ValueFormatter formatter){
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(mTEXT_SIZE);
+        xAxis.setDrawGridLines(gridlines);
+        xAxis.setDrawGridLinesBehindData(gridlines);
+        xAxis.setValueFormatter(formatter);
+        xAxis.setLabelRotationAngle(labelRotationAngel);
+    }
+    public void modifyYAxisforGraph(YAxis yAxis, Boolean enabled , int spaceBottom, int textSize){
+        yAxis.setEnabled(enabled);
+        yAxis.setTextSize(textSize);
+        yAxis.setSpaceBottom(spaceBottom);
+
+
+    }
+
+    public void lineDataSetproperties(LineDataSet lineDataSet){
+        lineDataSet.setColor(Color.BLUE);
+        lineDataSet.setDrawCircleHole(false);
+        lineDataSet.setDrawFilled(true);
+        lineDataSet.setLineWidth(1);
+        lineDataSet.setDrawCircles(false);
+        lineDataSet.setDrawValues(false);
+        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        lineDataSet.setDrawFilled(true);
+        lineDataSet.setFillColor(Color.LTGRAY);
+    }
+
+    //-- add a lineDataproperites() method here for each chart as required ---
+
+    public void setLegendProperties(Legend legend, boolean setEnabled, int mTextSize , int offset, Legend.LegendVerticalAlignment v , Legend.LegendHorizontalAlignment h , Legend.LegendOrientation o){
+        legend.setEnabled(setEnabled);
+        legend.setFormSize(mTextSize);
+        legend.setTextSize(mTextSize);
+        legend.setVerticalAlignment(v);
+        legend.setHorizontalAlignment(h);
+        legend.setOrientation(o);
+        legend.setYOffset(offset);
+
+    }
+
 
 
 
