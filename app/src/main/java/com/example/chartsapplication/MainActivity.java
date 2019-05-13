@@ -42,63 +42,72 @@ public class MainActivity extends AppCompatActivity {
     private List<Entry> entries;
     private List<BarEntry> barEntries;
     private List<PieEntry> pieEntries;
+    private List<BarEntry> barEntriesWordCountList;
+    private List<BarEntry> barChartEntriesCountList;
+    private List<String> weekDays;
     private List<TextView> testTextViewArray;
     private int mTEXT_SIZE = 12;
     private int[] decodedColors;
     private Typeface mMoodsFont;
     private Mood mood;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         testTextViewArray = new ArrayList<>();
-        TextView testTextView0;
-        testTextViewArray.add(testTextView0 = findViewById(R.id.testTextView0));
-        TextView testTextView1;
-        testTextViewArray.add(testTextView1 = findViewById(R.id.testTextView1));
-        TextView testTextView2;
-        testTextViewArray.add(testTextView2 = findViewById(R.id.testTextView2));
-        TextView testTextView3;
-        testTextViewArray.add(testTextView3 = findViewById(R.id.testTextView3));
-        TextView testTextView4;
-        testTextViewArray.add(testTextView4 = findViewById(R.id.testTextView4));
+        intialiseTextViews();
         mMoodsFont = ResourcesCompat.getFont( this, R.font.diaro_moods);
+        weekDays = Arrays.asList("sunday","monday","tuesday","wednesday","thursday","friday","saturday");
         setDecodedColors();
-        initialiseLineChart();
-        intialiseBarChart();
+        initialiseLineChartEntryCount();
+        intialiseBarChartForWordCountPerDay();
+        intialiseBarChartForEntryCountPerDay();
+        intialiseBarChartForMoodCountPerDay();
         intialisePieChat();
 
     }
 
-    public void setDataForLineChart(){
+    public void setDataForLineChartEntryCount(){
         entries = new ArrayList<Entry>();
         for(int i=0; i < 30; i++){
             int val = ThreadLocalRandom.current().nextInt(0, 30 + 1);
-            Log.i("value of i",String.valueOf(i));
             entries.add(new Entry(i*(-1),val));
         }
-        Log.i("Array legth", String.valueOf(entries.size()));
         Collections.sort(entries,new EntryXComparator());
    }
 
-    public void setDataForBarChart(){
+    public void setDataForBarChartMoodCount(){
         barEntries = new ArrayList<>();
-        String[] weekdays = new String[] {"sunday","monday","tuesday","wednesday","thursday","friday","saturday"};
-        for(int i=0; i< weekdays.length; i++) {
+        for(int i=0; i< weekDays.size(); i++) {
             int val = ThreadLocalRandom.current().nextInt(0, 20 + 1);
-            if(!weekdays[i].isEmpty()) {
+            if(!weekDays.get(i).isEmpty()) {
                 barEntries.add(new BarEntry(i,val));
             }
         }
+    }
 
-//          barEntries.add(new BarEntry(0,10));
-//          barEntries.add(new BarEntry(1,0));
-//          barEntries.add(new BarEntry(2,20));
-//          barEntries.add(new BarEntry(3,30));
-//          barEntries.add(new BarEntry(4,8));
-//          barEntries.add(new BarEntry(5,7));
-//          barEntries.add(new BarEntry(6,11));
+
+    public void setDataForBarChartEntryCountPerDay(){
+        barChartEntriesCountList = new ArrayList<>();
+        for(int i=0; i< weekDays.size(); i++) {
+            int val = ThreadLocalRandom.current().nextInt(0, 200);
+            if(!weekDays.get(i).isEmpty()) {
+                barChartEntriesCountList.add(new BarEntry(i,val));
+            }
+        }
+    }
+
+    public void setDataForBarChartWordCountPerDay(){
+        barEntriesWordCountList = new ArrayList<>();
+        for(int i=0; i< weekDays.size(); i++) {
+            int val = ThreadLocalRandom.current().nextInt(0, 200);
+            if(!weekDays.get(i).isEmpty()) {
+                barEntriesWordCountList.add(new BarEntry(i,val));
+            }
+        }
+
 
     }
 
@@ -114,8 +123,9 @@ public class MainActivity extends AppCompatActivity {
            Log.i("fontResId",String.valueOf(mood.getFontResId()));
        }
     }
-    public void initialiseLineChart(){
-        setDataForLineChart();
+
+    public void initialiseLineChartEntryCount(){
+        setDataForLineChartEntryCount();
         LineChart lineChart = findViewById(R.id.chart);
         LineDataSet lineDataSet = new LineDataSet(entries, "days");
         lineDataSetproperties(lineDataSet);
@@ -152,34 +162,36 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void intialiseBarChart(){
-        setDataForBarChart();
-        final List<String> weekDays = Arrays.asList("sunday","monday","tuesday","wednesday","thursday","friday","saturday");
-        BarChart barChart = findViewById(R.id.bar_chart);
-        BarDataSet barDataSet = new BarDataSet(barEntries, "Random entries during Weeks");
-        barDataSet.setColors(decodedColors);
-        BarData barData = new BarData(barDataSet);
-        barChart.setData(barData);
-        barChart.getDescription().setEnabled(false);
-        XAxis xAxis = barChart.getXAxis();
-        YAxis yAxis = barChart.getAxisRight();
-        YAxis yAxisLeft = barChart.getAxisLeft();
-        modifyYAxisforGraph(yAxis,false,0,mTEXT_SIZE);
-        modifyYAxisforGraph(yAxisLeft,true,0,mTEXT_SIZE);
-        ValueFormatter formatter = new ValueFormatter() {
-            @Override
-            public String getAxisLabel(float value, AxisBase axis) {
-                return weekDays.get((int)value);
-            }
-        };
-        modifyXAxisforGraph(xAxis,false,-35,formatter);
-        Legend legend = barChart.getLegend();
-        legend.setEnabled(false);
-        barChart.setTouchEnabled(true);
-        barChart.invalidate();
+    public void intialiseBarChartForEntryCountPerDay(){
+        setDataForBarChartEntryCountPerDay();
+        BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
+        BarDataSet barDataSet = new BarDataSet(barChartEntriesCountList,"Random entries during Week");
+        intitaliseBarChart(barChartEntryCount,barDataSet);
+
 
 
     }
+
+    public void intialiseBarChartForMoodCountPerDay(){
+        setDataForBarChartMoodCount();
+        BarChart barChartMoodCount = findViewById(R.id.bar_chart_mood_per_day);
+        BarDataSet barDataSetMoodCount = new BarDataSet(barEntries, "Random Moods during the Week");
+        intitaliseBarChart(barChartMoodCount,barDataSetMoodCount);
+
+
+    }
+
+    public void intialiseBarChartForWordCountPerDay(){
+        setDataForBarChartWordCountPerDay();
+        BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
+        BarDataSet barDataSet = new BarDataSet(barEntriesWordCountList, "Words during Week");
+        intitaliseBarChart(barChartWordCount,barDataSet);
+    }
+
+
+
+
+
 
     public void intialisePieChat(){
         setDataforPieChart();
@@ -219,7 +231,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
+    public void intialiseTextViews(){
+
+        TextView testTextView0;
+        testTextViewArray.add(testTextView0 = findViewById(R.id.testTextView0));
+        TextView testTextView1;
+        testTextViewArray.add(testTextView1 = findViewById(R.id.testTextView1));
+        TextView testTextView2;
+        testTextViewArray.add(testTextView2 = findViewById(R.id.testTextView2));
+        TextView testTextView3;
+        testTextViewArray.add(testTextView3 = findViewById(R.id.testTextView3));
+        TextView testTextView4;
+        testTextViewArray.add(testTextView4 = findViewById(R.id.testTextView4));
+
+    }
+
     /** all the methods here can be expanded as we introduce properties in the graph **/
+
+    public void intitaliseBarChart(BarChart barChart, BarDataSet barDataSet){
+        barDataSet.setColors(decodedColors);
+        BarData barData = new BarData(barDataSet);
+        barChart.setData(barData);
+        barChart.getDescription().setEnabled(false);
+        XAxis xAxis = barChart.getXAxis();
+        YAxis yAxis = barChart.getAxisRight();
+        YAxis yAxisLeft = barChart.getAxisLeft();
+        modifyYAxisforGraph(yAxis,false,0,mTEXT_SIZE);
+        modifyYAxisforGraph(yAxisLeft,true,0,mTEXT_SIZE);
+        ValueFormatter formatter = new ValueFormatter() {
+            @Override
+            public String getAxisLabel(float value, AxisBase axis) {
+                return weekDays.get((int)value);
+            }
+        };
+        modifyXAxisforGraph(xAxis,false,-35,formatter);
+        Legend legend = barChart.getLegend();
+        legend.setEnabled(false);
+        barChart.setTouchEnabled(true);
+        barChart.invalidate();
+    }
 
     public void modifyXAxisforGraph(XAxis xAxis, Boolean gridlines, float labelRotationAngel, ValueFormatter formatter){
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -249,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
         lineDataSet.setFillColor(Color.LTGRAY);
     }
 
-    //-- add a lineDataproperites() method here for each chart as required ---
+    //-- add a lineDataProperties() method here for each chart as required ---
 
     public void setLegendProperties(Legend legend, boolean setEnabled, int mTextSize , int offset, Legend.LegendVerticalAlignment v , Legend.LegendHorizontalAlignment h , Legend.LegendOrientation o){
         legend.setEnabled(setEnabled);

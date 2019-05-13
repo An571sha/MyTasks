@@ -13,7 +13,10 @@
     <string name="mood_3">Settings</string>
     <string name="mood_4">Settings</string>
     <string name="mood_5">Settings</string>
-
+    <string name="entry_count_weekly">Entry Count per Day</string>
+    <string name="word_count_weekly">Word Count per Day</string>
+    <string name="mood_insights">Mood Insights</string>
+    <string name="average_mood_per_day">Average Mood per Day</string>
 
 
 </resources>
