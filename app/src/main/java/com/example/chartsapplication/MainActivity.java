@@ -62,6 +62,12 @@ public class MainActivity extends AppCompatActivity {
         intialiseTextViews();
         mMoodsFont = ResourcesCompat.getFont( this, R.font.diaro_moods);
         weekDays = Arrays.asList("sunday","monday","tuesday","wednesday","thursday","friday","saturday");
+        lineChartEntriesCountList = generateDummyDataforLineChart(0,20);
+        lineChartWordCountList = generateDummyDataforLineChart(0,200);
+        lineChartMoodCountList = generateDummyDataforLineChart(0,30);
+        barChartMoodCountList = generateDummyDataforBarChart(0,30);
+        barChartEntriesCountList =  generateDummyDataforBarChart(0,20);
+        barChartEntriesWordCountList = generateDummyDataforBarChart(0,200);
         setDecodedColors();
         intialiseLineChartForEntryCount();
         intialiseLineChartForWordCount();
@@ -71,33 +77,6 @@ public class MainActivity extends AppCompatActivity {
         intialisePieChat();
 
     }
-
-    public void setDataForLineChartEntryCount(){
-        lineChartEntriesCountList = generateDummyDataforLineChart(0,20);
-   }
-
-   public void setDataForLineChartWordCount(){
-        lineChartWordCountList = generateDummyDataforLineChart(0,200);
-   }
-
-   public void setDataForLineChartMoodCount(){
-        lineChartMoodCountList = generateDummyDataforLineChart(0,30);
-   }
-
-    public void setDataForBarChartMoodCount(){
-       barChartMoodCountList = generateDummyDataforBarChart(0,30);
-    }
-
-
-    public void setDataForBarChartEntryCountPerDay(){
-       barChartEntriesCountList =  generateDummyDataforBarChart(0,20);
-    }
-
-    public void setDataForBarChartWordCountPerDay(){
-       barChartEntriesWordCountList = generateDummyDataforBarChart(0,200);
-    }
-
-
     public void setDataforPieChartMoodCount(){
         pieEntries = new ArrayList<>();
         String[] moods = new String[] {"1","2","3","4","5"};
@@ -112,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void intialiseBarChartForEntryCountPerDay(){
-        setDataForBarChartEntryCountPerDay();
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
         BarDataSet barDataSet = new BarDataSet(barChartEntriesCountList,"Random entries during Week");
         initialiseBarChart(barChartEntryCount,barDataSet);
@@ -122,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void intialiseBarChartForMoodCountPerDay(){
-        setDataForBarChartMoodCount();
         BarChart barChartMoodCount = findViewById(R.id.bar_chart_mood_per_day);
         BarDataSet barDataSetMoodCount = new BarDataSet(barChartMoodCountList, "Random Moods during the Week");
         initialiseBarChart(barChartMoodCount,barDataSetMoodCount);
@@ -131,21 +108,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void intialiseBarChartForWordCountPerDay(){
-        setDataForBarChartWordCountPerDay();
         BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
         BarDataSet barDataSet = new BarDataSet(barChartEntriesWordCountList, "Words during Week");
         initialiseBarChart(barChartWordCount,barDataSet);
     }
 
     public void intialiseLineChartForWordCount(){
-        setDataForLineChartWordCount();
         LineChart lineChart = findViewById(R.id.line_chart_word_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartWordCountList,"Words");
         initialiseLineChart(lineChart,lineDataSet,"words","word");
     }
 
     public void intialiseLineChartForEntryCount(){
-        setDataForLineChartEntryCount();
         LineChart lineChart = findViewById(R.id.line_chart_entry_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartEntriesCountList,"Entries");
         initialiseLineChart(lineChart,lineDataSet,"entries","entry");
@@ -153,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void intialiseLinechartForAverageMood(){
-        setDataForLineChartMoodCount();
+
     }
 
 
@@ -269,15 +243,13 @@ public class MainActivity extends AppCompatActivity {
         YAxis yAxis = lineChart.getAxisRight();
         modifyYAxisForGraph(yAxisLeft,true,0 , mTEXT_SIZE);
         modifyYAxisForGraph(yAxis,false,0, mTEXT_SIZE);
-        xAxis.setDrawGridLinesBehindData(false);
-        yAxis.setDrawGridLines(false);
         ValueFormatter valueFormatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
                 return String.valueOf(-(int)value);
             }
         };
-        modifyXAxisForGraph(xAxis,true,0,valueFormatter);
+        modifyXAxisForGraph(xAxis,false,0,valueFormatter);
         lineChart.getDescription().setEnabled(false);
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
