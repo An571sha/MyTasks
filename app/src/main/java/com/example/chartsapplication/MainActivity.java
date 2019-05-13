@@ -2,13 +2,12 @@ package com.example.chartsapplication;
 
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
@@ -39,10 +38,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class MainActivity extends AppCompatActivity {
 
-    private List<Entry> entries;
-    private List<BarEntry> barEntries;
+    private List<Entry> lineChartWordCountList;
+    private List<Entry> lineChartEntriesCountList;
+    private List<Entry> lineChartMoodCountList;
+    private List<BarEntry> barChartMoodCountList;
     private List<PieEntry> pieEntries;
-    private List<BarEntry> barEntriesWordCountList;
+    private List<BarEntry> barChartEntriesWordCountList;
     private List<BarEntry> barChartEntriesCountList;
     private List<String> weekDays;
     private List<TextView> testTextViewArray;
@@ -61,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
         mMoodsFont = ResourcesCompat.getFont( this, R.font.diaro_moods);
         weekDays = Arrays.asList("sunday","monday","tuesday","wednesday","thursday","friday","saturday");
         setDecodedColors();
-        initialiseLineChartEntryCount();
+        intialiseLineChartForEntryCount();
+        intialiseLineChartForWordCount();
         intialiseBarChartForWordCountPerDay();
         intialiseBarChartForEntryCountPerDay();
         intialiseBarChartForMoodCountPerDay();
@@ -70,48 +72,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setDataForLineChartEntryCount(){
-        entries = new ArrayList<Entry>();
-        for(int i=0; i < 30; i++){
-            int val = ThreadLocalRandom.current().nextInt(0, 30 + 1);
-            entries.add(new Entry(i*(-1),val));
-        }
-        Collections.sort(entries,new EntryXComparator());
+        lineChartEntriesCountList = generateDummyDataforLineChart(0,20);
+   }
+
+   public void setDataForLineChartWordCount(){
+        lineChartWordCountList = generateDummyDataforLineChart(0,200);
+   }
+
+   public void setDataForLineChartMoodCount(){
+        lineChartMoodCountList = generateDummyDataforLineChart(0,30);
    }
 
     public void setDataForBarChartMoodCount(){
-        barEntries = new ArrayList<>();
-        for(int i=0; i< weekDays.size(); i++) {
-            int val = ThreadLocalRandom.current().nextInt(0, 20 + 1);
-            if(!weekDays.get(i).isEmpty()) {
-                barEntries.add(new BarEntry(i,val));
-            }
-        }
+       barChartMoodCountList = generateDummyDataforBarChart(0,30);
     }
 
 
     public void setDataForBarChartEntryCountPerDay(){
-        barChartEntriesCountList = new ArrayList<>();
-        for(int i=0; i< weekDays.size(); i++) {
-            int val = ThreadLocalRandom.current().nextInt(0, 200);
-            if(!weekDays.get(i).isEmpty()) {
-                barChartEntriesCountList.add(new BarEntry(i,val));
-            }
-        }
+       barChartEntriesCountList =  generateDummyDataforBarChart(0,20);
     }
 
     public void setDataForBarChartWordCountPerDay(){
-        barEntriesWordCountList = new ArrayList<>();
-        for(int i=0; i< weekDays.size(); i++) {
-            int val = ThreadLocalRandom.current().nextInt(0, 200);
-            if(!weekDays.get(i).isEmpty()) {
-                barEntriesWordCountList.add(new BarEntry(i,val));
-            }
-        }
-
-
+       barChartEntriesWordCountList = generateDummyDataforBarChart(0,200);
     }
 
-    public void setDataforPieChart(){
+
+    public void setDataforPieChartMoodCount(){
         pieEntries = new ArrayList<>();
         String[] moods = new String[] {"1","2","3","4","5"};
        for(int i=0; i< moods.length; i++) {
@@ -124,49 +110,11 @@ public class MainActivity extends AppCompatActivity {
        }
     }
 
-    public void initialiseLineChartEntryCount(){
-        setDataForLineChartEntryCount();
-        LineChart lineChart = findViewById(R.id.chart);
-        LineDataSet lineDataSet = new LineDataSet(entries, "days");
-        lineDataSetproperties(lineDataSet);
-        LineData lineData = new LineData(lineDataSet);
-        lineChart.setData(lineData);
-        lineChart.setFadingEdgeLength(20);
-        XAxis xAxis = lineChart.getXAxis();
-        YAxis yAxisLeft = lineChart.getAxisLeft();
-        YAxis yAxis = lineChart.getAxisRight();
-        modifyYAxisforGraph(yAxisLeft,true,0 , mTEXT_SIZE);
-        modifyYAxisforGraph(yAxis,false,0, mTEXT_SIZE);
-        xAxis.setDrawGridLinesBehindData(false);
-        ValueFormatter valueFormatter = new ValueFormatter() {
-            @Override
-            public String getAxisLabel(float value, AxisBase axis) {
-                return String.valueOf(-(int)value);
-            }
-        };
-        modifyXAxisforGraph(xAxis,true,0,valueFormatter);
-        lineChart.getDescription().setEnabled(false);
-        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-            @Override
-            public void onValueSelected(Entry e, Highlight h) {
-              displayToast(e);
-            }
-
-            @Override
-            public void onNothingSelected() {
-
-            }
-        });
-        lineChart.invalidate();
-
-
-    }
-
     public void intialiseBarChartForEntryCountPerDay(){
         setDataForBarChartEntryCountPerDay();
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
         BarDataSet barDataSet = new BarDataSet(barChartEntriesCountList,"Random entries during Week");
-        intitaliseBarChart(barChartEntryCount,barDataSet);
+        initialiseBarChart(barChartEntryCount,barDataSet);
 
 
 
@@ -175,8 +123,8 @@ public class MainActivity extends AppCompatActivity {
     public void intialiseBarChartForMoodCountPerDay(){
         setDataForBarChartMoodCount();
         BarChart barChartMoodCount = findViewById(R.id.bar_chart_mood_per_day);
-        BarDataSet barDataSetMoodCount = new BarDataSet(barEntries, "Random Moods during the Week");
-        intitaliseBarChart(barChartMoodCount,barDataSetMoodCount);
+        BarDataSet barDataSetMoodCount = new BarDataSet(barChartMoodCountList, "Random Moods during the Week");
+        initialiseBarChart(barChartMoodCount,barDataSetMoodCount);
 
 
     }
@@ -184,17 +132,32 @@ public class MainActivity extends AppCompatActivity {
     public void intialiseBarChartForWordCountPerDay(){
         setDataForBarChartWordCountPerDay();
         BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
-        BarDataSet barDataSet = new BarDataSet(barEntriesWordCountList, "Words during Week");
-        intitaliseBarChart(barChartWordCount,barDataSet);
+        BarDataSet barDataSet = new BarDataSet(barChartEntriesWordCountList, "Words during Week");
+        initialiseBarChart(barChartWordCount,barDataSet);
+    }
+
+    public void intialiseLineChartForWordCount(){
+        setDataForLineChartWordCount();
+        LineChart lineChart = findViewById(R.id.line_chart_word_count);
+        LineDataSet lineDataSet = new LineDataSet(lineChartWordCountList,"Words");
+        initialiseLineChart(lineChart,lineDataSet,"words","word");
+    }
+
+    public void intialiseLineChartForEntryCount(){
+        setDataForLineChartEntryCount();
+        LineChart lineChart = findViewById(R.id.line_chart_entry_count);
+        LineDataSet lineDataSet = new LineDataSet(lineChartEntriesCountList,"Entries");
+        initialiseLineChart(lineChart,lineDataSet,"entries","entry");
+
+    }
+
+    public void intialiseLinechartForAverageMood(){
+        setDataForLineChartMoodCount();
     }
 
 
-
-
-
-
     public void intialisePieChat(){
-        setDataforPieChart();
+        setDataforPieChartMoodCount();
         PieChart pieChart = findViewById(R.id.pie_chart);
         PieDataSet pieDataSet = new PieDataSet(pieEntries,"");
         pieDataSet.setDrawValues(false);
@@ -221,14 +184,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void displayToast(Entry e){
+    public void displayToast(Entry e , String first , String second){
         if(e.getY() < 1){
-            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+"entry"+
+            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+first+
                     (int)e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
         }else{
-            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+"entries"+
+            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+second+
                     (int)e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public List<BarEntry> generateDummyDataforBarChart(int origin, int bound){
+        List<BarEntry> list = new ArrayList<>();
+        for(int i=0; i< weekDays.size(); i++) {
+            int val = ThreadLocalRandom.current().nextInt(origin, bound);
+            if(!weekDays.get(i).isEmpty()) {
+                list.add(new BarEntry(i,val));
+            }
+        }
+        return list;
+    }
+
+    public List<Entry> generateDummyDataforLineChart(int origin, int bound){
+        List<Entry> list = new ArrayList<>();
+        for(int i=0; i < 30; i++){
+            int val = ThreadLocalRandom.current().nextInt(origin,bound);
+            list.add(new Entry(i*(-1),val));
+        }
+        Collections.sort(list,new EntryXComparator());
+
+        return list;
     }
 
 
@@ -250,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** all the methods here can be expanded as we introduce properties in the graph **/
 
-    public void intitaliseBarChart(BarChart barChart, BarDataSet barDataSet){
+    public void initialiseBarChart(BarChart barChart, BarDataSet barDataSet){
         barDataSet.setColors(decodedColors);
         BarData barData = new BarData(barDataSet);
         barChart.setData(barData);
@@ -258,22 +243,56 @@ public class MainActivity extends AppCompatActivity {
         XAxis xAxis = barChart.getXAxis();
         YAxis yAxis = barChart.getAxisRight();
         YAxis yAxisLeft = barChart.getAxisLeft();
-        modifyYAxisforGraph(yAxis,false,0,mTEXT_SIZE);
-        modifyYAxisforGraph(yAxisLeft,true,0,mTEXT_SIZE);
+        modifyYAxisForGraph(yAxis,false,0,mTEXT_SIZE);
+        modifyYAxisForGraph(yAxisLeft,true,0,mTEXT_SIZE);
         ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
                 return weekDays.get((int)value);
             }
         };
-        modifyXAxisforGraph(xAxis,false,-35,formatter);
+        modifyXAxisForGraph(xAxis,false,-35,formatter);
         Legend legend = barChart.getLegend();
         legend.setEnabled(false);
         barChart.setTouchEnabled(true);
         barChart.invalidate();
     }
 
-    public void modifyXAxisforGraph(XAxis xAxis, Boolean gridlines, float labelRotationAngel, ValueFormatter formatter){
+    public void initialiseLineChart(LineChart lineChart, LineDataSet lineDataSet , final String firstToastString, final String secondToastString){
+        lineDataSetproperties(lineDataSet);
+        LineData lineData = new LineData(lineDataSet);
+        lineChart.setData(lineData);
+        lineChart.setFadingEdgeLength(20);
+        XAxis xAxis = lineChart.getXAxis();
+        YAxis yAxisLeft = lineChart.getAxisLeft();
+        YAxis yAxis = lineChart.getAxisRight();
+        modifyYAxisForGraph(yAxisLeft,true,0 , mTEXT_SIZE);
+        modifyYAxisForGraph(yAxis,false,0, mTEXT_SIZE);
+        xAxis.setDrawGridLinesBehindData(false);
+        yAxis.setDrawGridLines(false);
+        ValueFormatter valueFormatter = new ValueFormatter() {
+            @Override
+            public String getAxisLabel(float value, AxisBase axis) {
+                return String.valueOf(-(int)value);
+            }
+        };
+        modifyXAxisForGraph(xAxis,true,0,valueFormatter);
+        lineChart.getDescription().setEnabled(false);
+        lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry e, Highlight h) {
+                displayToast(e, firstToastString ,secondToastString);
+            }
+
+            @Override
+            public void onNothingSelected() {
+
+            }
+        });
+        lineChart.invalidate();
+    }
+
+    public void modifyXAxisForGraph(XAxis xAxis, Boolean gridlines, float labelRotationAngel, ValueFormatter formatter){
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setTextSize(mTEXT_SIZE);
         xAxis.setDrawGridLines(gridlines);
@@ -281,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
         xAxis.setValueFormatter(formatter);
         xAxis.setLabelRotationAngle(labelRotationAngel);
     }
-    public void modifyYAxisforGraph(YAxis yAxis, Boolean enabled , int spaceBottom, int textSize){
+    public void modifyYAxisForGraph(YAxis yAxis, Boolean enabled , int spaceBottom, int textSize){
         yAxis.setEnabled(enabled);
         yAxis.setTextSize(textSize);
         yAxis.setSpaceBottom(spaceBottom);
