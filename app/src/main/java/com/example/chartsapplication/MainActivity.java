@@ -186,12 +186,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void displayToast(Entry e , String first , String second){
-        if(e.getY() < 1){
-            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+first+
-                    (int)e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
+        if(e.getY() > 1){
+            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+first+"\n"+
+                    (int)-e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
         }else{
-            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+second+
-                    (int)e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this,String.valueOf((int)e.getY()+" "+second+"\n"+
+                    (int)-e.getX()+" "+"days ago"),Toast.LENGTH_SHORT).show();
         }
     }
 

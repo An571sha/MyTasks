@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-    <androidx.cardView.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/card_outer_margin"
@@ -49,7 +49,7 @@
 
             </LinearLayout>
 
-        <androidx.cardView.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardBackgroundColor="#E6E6E6"
@@ -85,9 +85,9 @@
 
             </LinearLayout>
 
-        </androidx.cardView.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardView.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardBackgroundColor="#E6E6E6"
@@ -123,9 +123,9 @@
 
             </LinearLayout>
 
-        </androidx.cardView.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardView.widget.CardView
+        <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="#E6E6E6"
@@ -155,9 +155,9 @@
                         android:padding="5dp" />
                 </LinearLayout>
 
-            </androidx.cardView.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <androidx.cardView.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="#E6E6E6"
@@ -187,13 +187,13 @@
                         android:padding="5dp" />
                 </LinearLayout>
 
-            </androidx.cardView.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
-    </androidx.cardView.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
-    <androidx.cardView.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="#E6E6E6"
@@ -223,7 +223,7 @@
 
     </LinearLayout>
 
-    <androidx.cardView.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/card_margin"
@@ -288,9 +288,9 @@
 
         </LinearLayout>
 
-    </androidx.cardView.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
-    <androidx.cardView.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="#E6E6E6"
@@ -326,11 +326,11 @@
 
         </LinearLayout>
 
-    </androidx.cardView.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
-    </androidx.cardView.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
