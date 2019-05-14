@@ -33,19 +33,21 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/textViewDiaroInsights"
+                    android:id="@+id/text_view_diaro_insights"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="5dp"
-                    android:text="Diaro Insights"
+                    android:text="@string/diaro_insights"
                     android:textAlignment="textEnd"
                     android:textSize="18sp" />
 
-            <Spinner
-                android:id="@+id/spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="5dp"/>
+                <Spinner
+                    android:id="@+id/spinner_select_days"
+                    android:layout_width="131dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="130dp"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center" />
 
             </LinearLayout>
 
@@ -276,7 +278,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/text_view_margin_left"
-                android:text="Mood Count" />
+                android:text="@string/mood_count" />
 
             <com.github.mikephil.charting.charts.PieChart
                 android:id="@+id/pie_chart"

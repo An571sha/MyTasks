@@ -19,6 +19,14 @@
     <string name="average_mood_per_day">Average Mood per Day</string>
     <string name="entry_count">Entry Count</string>
     <string name="word_count">Word Count</string>
+    <string name="diaro_insights">Diaro Insights</string>
+    <string name="mood_count">Mood Count</string>
+    <string-array name="select_array_spinner">
+        <item>7 Days</item>
+        <item>4 Weeks</item>
+        <item>2 Months</item>
+        <item>1 Year</item>
+    </string-array>
 
 
 </resources>
