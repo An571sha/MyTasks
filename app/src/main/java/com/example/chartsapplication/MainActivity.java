@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private List<BarEntry> barChartEntriesWordCountList;
     private List<BarEntry> barChartEntriesCountList;
     private List<String> weekDays;
+    private List<String> weekDaysCopy;
     private List<TextView> testTextViewArray;
     private int mTEXT_SIZE = 12;
     private int[] decodedColors;
@@ -69,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
         testTextViewArray = new ArrayList<>();
         setSpinner();
         weekDays = Arrays.asList(new DateFormatSymbols(getApplicationContext().getResources().getConfiguration().locale).getWeekdays());
+        weekDays = weekDays.subList(1,8);
+        Log.i("WeekDaysssssssssss",weekDays.toString());
         mMoodsFont = ResourcesCompat.getFont(this, R.font.diaro_moods);
         setDecodedColors();
 
@@ -122,13 +125,11 @@ public class MainActivity extends AppCompatActivity {
             testTextViewArray.get(i).setText(mood.getFontResId());
             testTextViewArray.get(i).setTypeface(mMoodsFont);
             pieEntries.add(new PieEntry(val, mood.getFontResId()));
-            Log.i("fontResId", String.valueOf(mood.getFontResId()));
         }
     }
 
     public void intialiseBarChartForEntryCountPerDay() {
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
-        Log.i("barChartEntryCount",barChartEntriesCountList.toString());
         BarDataSet barDataSet = new BarDataSet(barChartEntriesCountList, "Random entries during Week");
         initialiseBarChart(barChartEntryCount, barDataSet);
 
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void intialiseBarChartForWordCountPerDay() {
         BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
-        Log.i("barChartWordCount",barChartEntriesCountList.toString());
+//        Log.i("barChartWordCount",barChartEntriesCountList.toString());
         BarDataSet barDataSet = new BarDataSet(barChartEntriesWordCountList, "Words during Week");
         initialiseBarChart(barChartWordCount, barDataSet);
     }
@@ -298,6 +299,8 @@ public class MainActivity extends AppCompatActivity {
         ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
+                Log.i("values",String.valueOf(value));
+                Log.i("weekdays",weekDays.get((int) value));
                 return weekDays.get((int) value);
             }
         };
