@@ -33,14 +33,15 @@ import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
-import com.github.mikephil.charting.utils.EntryXComparator;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.DateFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -59,9 +60,6 @@ public class MainActivity extends AppCompatActivity {
     private int[] decodedColors;
     private Typeface mMoodsFont;
     private Mood mood;
-    private int entriesOrigin;
-    private int WordsOrigin;
-    private int moodOrigin;
 
 
     @Override
@@ -69,42 +67,41 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         testTextViewArray = new ArrayList<>();
-        intialiseTextViews();
         setSpinner();
-
         weekDays = Arrays.asList(new DateFormatSymbols(getApplicationContext().getResources().getConfiguration().locale).getWeekdays());
         mMoodsFont = ResourcesCompat.getFont(this, R.font.diaro_moods);
-
-        lineChartEntriesCountList = generateDummyDataforLineChart(getEntriesOrigin(), 20);
-        barChartEntriesCountList = generateDummyDataforBarChart(getEntriesOrigin(), 20);
-
-        barChartEntriesWordCountList = generateDummyDataforBarChart(getWordsOrigin(), 200);
-        lineChartWordCountList = generateDummyDataforLineChart(getWordsOrigin(), 200);
-
-        lineChartMoodCountList = generateDummyDataforLineChart(20, 30);
-        barChartMoodCountList = generateDummyDataforBarChart(20, 30);
-
-
         setDecodedColors();
-        intialiseLineChartForEntryCount();
-        intialiseLineChartForWordCount();
-        intialiseBarChartForWordCountPerDay();
-        intialiseBarChartForEntryCountPerDay();
-        intialiseBarChartForMoodCountPerDay();
-        intialisePieChat();
+
 
     }
 
-    public void setSpinner() {
-        Spinner spinner = findViewById(R.id.spinner_select_days);
+    public void setSpinner(){
+        final Spinner spinner = findViewById(R.id.spinner_select_days);
         ArrayAdapter arrayAdapter = ArrayAdapter.createFromResource(this, R.array.select_array_spinner, android.R.layout.simple_spinner_item);
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(arrayAdapter);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                switch (position){
 
+                if(barChartEntriesWordCountList!= null && barChartEntriesCountList!=null) {
+                    barChartEntriesCountList.clear();
+                    barChartEntriesWordCountList.clear();
+                    lineChartWordCountList.clear();
+                    lineChartEntriesCountList.clear();
+                    lineChartMoodCountList.clear();
+                    barChartMoodCountList.clear();
+                }
+
+                try {
+                    setJSONForSpinner(String.valueOf(spinner.getSelectedItem()));
+                    intialiseBarChartForEntryCountPerDay();
+                    intialiseBarChartForWordCountPerDay();
+                    intialiseLineChartForEntryCount();
+                    intialiseLineChartForWordCount();
+                    intialiseBarChartForMoodCountPerDay();
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
 
             }
@@ -131,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void intialiseBarChartForEntryCountPerDay() {
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
+        Log.i("barChartEntryCount",barChartEntriesCountList.toString());
         BarDataSet barDataSet = new BarDataSet(barChartEntriesCountList, "Random entries during Week");
         initialiseBarChart(barChartEntryCount, barDataSet);
 
@@ -147,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void intialiseBarChartForWordCountPerDay() {
         BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
+        Log.i("barChartWordCount",barChartEntriesCountList.toString());
         BarDataSet barDataSet = new BarDataSet(barChartEntriesWordCountList, "Words during Week");
         initialiseBarChart(barChartWordCount, barDataSet);
     }
@@ -207,29 +206,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public List<BarEntry> generateDummyDataforBarChart(int origin, int bound) {
-        List<BarEntry> list = new ArrayList<>();
-        for (int i = 0; i < weekDays.size(); i++) {
-            int val = new Random().nextInt(origin) + bound;
-            if (!weekDays.get(i).isEmpty()) {
-                list.add(new BarEntry(i, val));
-            }
-        }
-        return list;
-    }
-
-    public List<Entry> generateDummyDataforLineChart(int origin, int bound) {
-        List<Entry> list = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            int val = new Random().nextInt(origin) + bound;
-            list.add(new Entry(i * (-1), val));
-        }
-        Collections.sort(list, new EntryXComparator());
-
-        return list;
-    }
-
-
     public void intialiseTextViews() {
 
         TextView testTextView0;
@@ -242,35 +218,67 @@ public class MainActivity extends AppCompatActivity {
         testTextViewArray.add(testTextView3 = findViewById(R.id.testTextView3));
         TextView testTextView4;
         testTextViewArray.add(testTextView4 = findViewById(R.id.testTextView4));
+    }
+
+
+   public void setJSONForSpinner(String dropDownList) throws JSONException {
+        DataHandler dataHandler = new DataHandler();
+        if(dropDownList.equals("1 Year")) {
+            String root = dataHandler.oneYearData.getArray();
+            retireveAndParseJSON(root);
+        }else if(dropDownList.equals("2 Months")) {
+            String root = dataHandler.twoMonthsData.getArray();
+            retireveAndParseJSON(root);
+        }else if(dropDownList.equals("4 Weeks")) {
+            String root = dataHandler.fourWeeksData.getArray();
+            retireveAndParseJSON(root);
+        }else if(dropDownList.equals("7 Days")) {
+            String root = dataHandler.sevendDaysData.getArray();
+            retireveAndParseJSON(root);
+        }
+    }
+
+    public void retireveAndParseJSON(String root) throws JSONException {
+        JSONObject jsonObject = new JSONObject(root);
+        JSONObject entriesCount = (JSONObject) jsonObject.get("entries_count");
+        JSONObject dailyWords = (JSONObject) jsonObject.get("daily_words");
+        JSONObject wordsCountDuringLastXDays = (JSONObject) jsonObject.get("words_count_during_last_x_days");
+        JSONObject entriesPerDayOfWeek = (JSONObject) jsonObject.get("entries_per_day_of_week");
+        JSONObject averageDayOfWeekMood = (JSONObject) jsonObject.get("average_day_of_week_mood");
+        JSONObject averageMoodDuringLastXDays = (JSONObject) jsonObject.get("average_mood_during_last_x_days");
+
+        lineChartEntriesCountList = addDataToLineChartListFromJson(entriesCount);
+
+        lineChartWordCountList = addDataToLineChartListFromJson(wordsCountDuringLastXDays);
+
+        lineChartMoodCountList = addDataToLineChartListFromJson(averageMoodDuringLastXDays);
+
+        barChartEntriesCountList = addDataToBarChartListFromJson(entriesPerDayOfWeek);
+
+        barChartEntriesWordCountList = addDataToBarChartListFromJson(dailyWords);
+
+        barChartMoodCountList = addDataToBarChartListFromJson(averageDayOfWeekMood);
 
     }
 
 
-
-    /** placing the getter and setters here**/
-    public int getEntriesOrigin() {
-        return entriesOrigin;
+    public List<Entry> addDataToLineChartListFromJson(JSONObject jsonObject) throws JSONException {
+        JSONArray value = (JSONArray) jsonObject.get("data");
+        List <Entry> list = new ArrayList<>();
+        for (int i = 0; i < value.length(); i++) {
+            list.add(new Entry(i,value.getInt(i)));
+        }
+        return list;
     }
 
-    public void setEntriesOrigin(int entriesOrigin) {
-        this.entriesOrigin = entriesOrigin;
-    }
 
-
-    public int getWordsOrigin() {
-        return WordsOrigin;
-    }
-
-    public void setWordsOrigin(int wordsOrigin) {
-        WordsOrigin = wordsOrigin;
-    }
-
-    public int getMoodOrigin() {
-        return moodOrigin;
-    }
-
-    public void setMoodOrigin(int moodOrigin) {
-        this.moodOrigin = moodOrigin;
+    public List<BarEntry> addDataToBarChartListFromJson(JSONObject jsonObject) throws JSONException {
+        JSONArray value = (JSONArray) jsonObject.get("data");
+        List <BarEntry> list = new ArrayList<>();
+        for (int i = 0; i < value.length(); i++) {
+            list.add(new BarEntry(i, value.getInt(i)));
+        }
+        return list;
     }
 
     /**
