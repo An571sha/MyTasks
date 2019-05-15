@@ -98,10 +98,10 @@ public class MainActivity extends AppCompatActivity {
                     lineChartEntriesCountList.clear();
                     lineChartMoodCountList.clear();
                     barChartMoodCountList.clear();
-
                 }
 
                 try {
+
                     currentSelectedDropDownItem = String.valueOf(spinner.getSelectedItem());
                     setJSONForSpinner(currentSelectedDropDownItem);
                     intialiseBarChartForEntryCountPerDay();
@@ -190,6 +190,16 @@ public class MainActivity extends AppCompatActivity {
         pieChart.invalidate();
     }
 
+    public String setAndSerializeMoodsForYAxisAndToast(int moodId) {
+        Mood mood = new Mood(moodId);
+        if (mood.getMoodTextResId() == 0) {
+            return "";
+        } else {
+
+            return getString(mood.getMoodTextResId());
+        }
+    }
+
     public void setDecodedColors() {
         final String[] colours = new String[]{"#3366CC", "#DC3912", "#FF9900", "#109618", "#990099",
                 "#3B3EAC", "#0099C6", "#DD4477", "#66AA00", "#B82E2E", "#316395", "#994499", "#22AA99",
@@ -205,14 +215,11 @@ public class MainActivity extends AppCompatActivity {
         if (currentSelectedDropDownItem.equals("1 Year")) {
 
             generateToast(l, e, first, second, "weeks ago");
-
         } else {
-
             generateToast(l, e, first, second, "days ago");
         }
-
-
     }
+
 
     public void generateToast(List l, Entry e, String first, String second, String third) {
 
@@ -227,13 +234,8 @@ public class MainActivity extends AppCompatActivity {
 
     public String getTextForToastMood(Entry e) {
         int moodId = 6 - Math.round(e.getY());
-        Mood mood = new Mood(moodId);
-        if (mood.getMoodTextResId() == 0) {
-            return "";
-        } else {
+        return setAndSerializeMoodsForYAxisAndToast(moodId);
 
-            return getString(mood.getMoodTextResId());
-        }
     }
 
     public void intialiseTextViews() {
@@ -455,16 +457,8 @@ public class MainActivity extends AppCompatActivity {
         ValueFormatter valueFormatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
-                Mood mood = new Mood(6 - (int) value);
-                Log.i("logForMoodid", String.valueOf(mood.getMoodTextResId()));
-
-                if (mood.getMoodTextResId() == 0) {
-                    return "";
-                } else {
-
-                    return getString(mood.getMoodTextResId());
-                }
-
+                int moodId = 6 - (int) value;
+                return setAndSerializeMoodsForYAxisAndToast(moodId);
             }
         };
         yAxisLeft.setValueFormatter(valueFormatter);
