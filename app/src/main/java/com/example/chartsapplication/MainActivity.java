@@ -78,12 +78,12 @@ public class MainActivity extends AppCompatActivity {
         intialiseTextViews();
         mMoodsFont = ResourcesCompat.getFont(this, R.font.diaro_moods);
         setDecodedColors();
-        intialisePieChat();
+
 
 
     }
 
-    public void setSpinner(){
+    public void setSpinner() {
         final Spinner spinner = findViewById(R.id.spinner_select_days);
         ArrayAdapter arrayAdapter = ArrayAdapter.createFromResource(this, R.array.select_array_spinner, android.R.layout.simple_spinner_item);
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -92,18 +92,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-                if(barChartEntriesWordCountList!= null && barChartEntriesCountList!=null) {
-                    int i = 0;
-                    Log.i("clear",String.valueOf(i++));
+                if (barChartEntriesWordCountList != null && barChartEntriesCountList != null) {
                     barChartEntriesCountList.clear();
-                    Log.i("clear",String.valueOf(i++));   barChartEntriesWordCountList.clear();
+                    barChartEntriesWordCountList.clear();
                     lineChartWordCountList.clear();
-                    Log.i("clear",String.valueOf(i++)); lineChartEntriesCountList.clear();
+                    lineChartEntriesCountList.clear();
                     lineChartMoodCountList.clear();
-                    Log.i("clear",String.valueOf(i++)); barChartMoodCountList.clear();
-                    Log.i("clear",String.valueOf(i++));
-                }
+                    barChartMoodCountList.clear();
 
+                }
 
                 try {
                     currentSelectedDropDownItem = String.valueOf(spinner.getSelectedItem());
@@ -113,6 +110,9 @@ public class MainActivity extends AppCompatActivity {
                     intialiseLineChartForEntryCount();
                     intialiseLineChartForWordCount();
                     intialiseBarChartForMoodCountPerDay();
+                    intialiseLinechartForAverageMood();
+                    intialisePieChat();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -127,16 +127,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setDataforPieChartMoodCount() {
-        pieEntries = new ArrayList<>();
-        String[] moods = new String[]{"1", "2", "3", "4", "5"};
-        for (int i = 0; i < moods.length; i++) {
-            int val = ThreadLocalRandom.current().nextInt(0, 30);
-            mood = new Mood(Integer.valueOf(moods[i]));
-            testTextViewArray.get(i).setText(mood.getFontResId());
-            testTextViewArray.get(i).setTypeface(mMoodsFont);
-            pieEntries.add(new PieEntry(val, i));
+//        pieEntries = new ArrayList<>();
+//        String[] moods = new String[]{"1", "2", "3", "4", "5"};
+//        for (int i = 0; i < moods.length; i++) {
+//            int val = ThreadLocalRandom.current().nextInt(0, 30);
+//            mood = new Mood(Integer.valueOf(moods[i]));
+//            testTextViewArray.get(i).setText(mood.getFontResId());
+//            testTextViewArray.get(i).setTypeface(mMoodsFont);
+//            pieEntries.add(new PieEntry(val, i));
         }
-    }
 
     public void intialiseBarChartForEntryCountPerDay() {
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
@@ -156,7 +155,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void intialiseBarChartForWordCountPerDay() {
         BarChart barChartWordCount = findViewById(R.id.bar_chart_word_count);
-//        Log.i("barChartWordCount",barChartEntriesCountList.toString());
         BarDataSet barDataSet = new BarDataSet(barChartEntriesWordCountList, "Words during Week");
         initialiseBarChart(barChartWordCount, barDataSet);
     }
@@ -175,13 +173,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void intialiseLinechartForAverageMood() {
+        LineChart lineChart = findViewById(R.id.line_chart_average_mood);
+        LineDataSet lineDataSet = new LineDataSet(lineChartMoodCountList, "Moods");
+        initialiseLineChart(lineChart,lineDataSet,"moods","mood",lineChartMoodLabels);
 
     }
 
 
     public void intialisePieChat() {
-        setDataforPieChartMoodCount();
         PieChart pieChart = findViewById(R.id.pie_chart);
+        Log.i("pie",pieEntries.toString());
         PieDataSet pieDataSet = new PieDataSet(pieEntries, "");
         pieDataSet.setDrawValues(false);
         pieDataSet.setColors(decodedColors);
@@ -190,7 +191,8 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setDrawSliceText(false);
         pieChart.setDrawHoleEnabled(false);
         Legend legend = pieChart.getLegend();
-        setLegendProperties(legend, true, mTEXT_SIZE, -25, Legend.LegendVerticalAlignment.CENTER, Legend.LegendHorizontalAlignment.LEFT, Legend.LegendOrientation.VERTICAL);
+        setLegendProperties(legend, true, mTEXT_SIZE, 10, Legend.LegendVerticalAlignment.TOP,
+                Legend.LegendHorizontalAlignment.LEFT, Legend.LegendOrientation.VERTICAL);
         pieChart.getDescription().setEnabled(false);
         pieChart.invalidate();
     }
@@ -263,8 +265,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void retireveAndParseJSON(String root) throws JSONException {
 
-
-
         JSONObject selectedChartJsonObject = new JSONObject(root);
         JSONObject entriesCount = (JSONObject) selectedChartJsonObject.get("entries_count");
         JSONObject dailyWords = (JSONObject) selectedChartJsonObject.get("daily_words");
@@ -272,10 +272,10 @@ public class MainActivity extends AppCompatActivity {
         JSONObject entriesPerDayOfWeek = (JSONObject) selectedChartJsonObject.get("entries_per_day_of_week");
         JSONObject averageDayOfWeekMood = (JSONObject) selectedChartJsonObject.get("average_day_of_week_mood");
         JSONObject averageMoodDuringLastXDays = (JSONObject) selectedChartJsonObject.get("average_mood_during_last_x_days");
+        JSONObject moodCount = (JSONObject) selectedChartJsonObject.get("mood_count");
 
 
         lineChartEntriesCountList = addDataToLineChartListFromJson(entriesCount);
-
 
         lineChartWordCountList = addDataToLineChartListFromJson(wordsCountDuringLastXDays);
 
@@ -283,9 +283,9 @@ public class MainActivity extends AppCompatActivity {
 
         lineChartEntriesLabels = addDataToLineChartLabelListFromJson(entriesCount);
 
-
         lineChartWordLabels = addDataToLineChartLabelListFromJson(wordsCountDuringLastXDays);
 
+        lineChartMoodLabels = addDataToLineChartLabelListFromJson(averageMoodDuringLastXDays);
 
         barChartEntriesCountList = addDataToBarChartListFromJson(entriesPerDayOfWeek);
 
@@ -293,6 +293,7 @@ public class MainActivity extends AppCompatActivity {
 
         barChartMoodCountList = addDataToBarChartListFromJson(averageDayOfWeekMood);
 
+        pieEntries = addDataToPieChartFromJson(moodCount);
 
 
     }
@@ -325,6 +326,15 @@ public class MainActivity extends AppCompatActivity {
         }
         return list;
 
+    }
+
+    public List<PieEntry> addDataToPieChartFromJson(JSONObject jsonObject) throws JSONException{
+        JSONArray value = (JSONArray) jsonObject.get("data");
+        List <PieEntry> list = new ArrayList<>();
+        for (int i = 0; i < value.length(); i++) {
+            list.add(new PieEntry(value.getInt(i),String.valueOf(i+1)));
+        }
+        return list;
     }
 
 

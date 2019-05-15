@@ -21,6 +21,7 @@
     <string name="word_count">Word Count</string>
     <string name="diaro_insights">Diaro Insights</string>
     <string name="mood_count">Mood Count</string>
+    <string name="average_mood">Average Mood</string>
     <string-array name="select_array_spinner">
         <item>7 Days</item>
         <item>4 Weeks</item>

@@ -43,10 +43,12 @@
 
                 <Spinner
                     android:id="@+id/spinner_select_days"
-                    android:layout_width="131dp"
+                    android:layout_width="130dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="130dp"
+                    android:layout_marginStart="110dp"
                     android:layout_marginTop="5dp"
+                    android:popupBackground="#E6E6E6"
+                    android:dropDownWidth="130dp"
                     android:gravity="center" />
 
             </LinearLayout>
@@ -329,6 +331,44 @@
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#E6E6E6"
+            android:layout_margin="@dimen/card_margin"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="15dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:layout_margin="@dimen/linear_layout_margin">
+
+                <TextView
+                    android:id="@+id/text_view_mood_day"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/text_view_margin_left"
+                    android:text="@string/average_mood" />
+
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/line_chart_average_mood"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:padding="5dp"
+                    android:paddingStart="5dp"
+                    android:paddingLeft="5dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="5dp"
+                    android:paddingRight="5dp"
+                    android:paddingBottom="5dp" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
