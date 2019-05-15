@@ -26,6 +26,7 @@ public class Mood {
 
     public int getMoodTextResId(){
         int retVal = 0;
+
         if(mId==MOOD_NONE){
             retVal = R.string.mood_none;
         }

@@ -7,12 +7,12 @@
     <string name="mood_3neutral" translatable="false">&#xe902;</string>
     <string name="mood_4unhappy" translatable="false">&#xe903;</string>
     <string name="mood_5teardrop" translatable="false">&#xe904;</string>
-    <string name="mood_none">Settings</string>
-    <string name="mood_1">Settings</string>
-    <string name="mood_2">Settings</string>
-    <string name="mood_3">Settings</string>
-    <string name="mood_4">Settings</string>
-    <string name="mood_5">Settings</string>
+    <string name="mood_none">""</string>
+    <string name="mood_1">Awesome</string>
+    <string name="mood_2">Happy</string>
+    <string name="mood_3">Neutral</string>
+    <string name="mood_4">Bad</string>
+    <string name="mood_5">Awful</string>
     <string name="entry_count_weekly">Entry Count per Day</string>
     <string name="word_count_weekly">Word Count per Day</string>
     <string name="mood_insights">Mood Insights</string>

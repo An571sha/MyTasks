@@ -11,7 +11,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.IntRange;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
 
@@ -43,7 +42,6 @@ import java.text.DateFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -51,9 +49,9 @@ public class MainActivity extends AppCompatActivity {
     private List<Entry> lineChartWordCountList;
     private List<Entry> lineChartEntriesCountList;
     private List<Entry> lineChartMoodCountList;
-    private List<Integer> lineChartWordLabels;
-    private List<Integer> lineChartEntriesLabels;
-    private List<Integer> lineChartMoodLabels;
+    private List<Float> lineChartWordLabels;
+    private List<Float> lineChartEntriesLabels;
+    private List<Float> lineChartMoodLabels;
     private List<BarEntry> barChartMoodCountList;
     private List<PieEntry> pieEntries;
     private List<BarEntry> barChartEntriesWordCountList;
@@ -65,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private Typeface mMoodsFont;
     private Mood mood;
     private String currentSelectedDropDownItem;
+    private String moodTextForToast;
+    private LineChart lineChartForMood;
 
 
     @Override
@@ -74,11 +74,10 @@ public class MainActivity extends AppCompatActivity {
         testTextViewArray = new ArrayList<>();
         setSpinner();
         weekDays = Arrays.asList(new DateFormatSymbols(getApplicationContext().getResources().getConfiguration().locale).getWeekdays());
-        weekDays = weekDays.subList(1,8);
+        weekDays = weekDays.subList(1, 8);
         intialiseTextViews();
         mMoodsFont = ResourcesCompat.getFont(this, R.font.diaro_moods);
         setDecodedColors();
-
 
 
     }
@@ -104,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
                 try {
                     currentSelectedDropDownItem = String.valueOf(spinner.getSelectedItem());
-                    setJSONForSpinner(String.valueOf(spinner.getSelectedItem()));
+                    setJSONForSpinner(currentSelectedDropDownItem);
                     intialiseBarChartForEntryCountPerDay();
                     intialiseBarChartForWordCountPerDay();
                     intialiseLineChartForEntryCount();
@@ -126,16 +125,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void setDataforPieChartMoodCount() {
-//        pieEntries = new ArrayList<>();
-//        String[] moods = new String[]{"1", "2", "3", "4", "5"};
-//        for (int i = 0; i < moods.length; i++) {
-//            int val = ThreadLocalRandom.current().nextInt(0, 30);
-//            mood = new Mood(Integer.valueOf(moods[i]));
-//            testTextViewArray.get(i).setText(mood.getFontResId());
-//            testTextViewArray.get(i).setTypeface(mMoodsFont);
-//            pieEntries.add(new PieEntry(val, i));
-        }
 
     public void intialiseBarChartForEntryCountPerDay() {
         BarChart barChartEntryCount = findViewById(R.id.bar_chart_entry_count);
@@ -149,6 +138,8 @@ public class MainActivity extends AppCompatActivity {
         BarChart barChartMoodCount = findViewById(R.id.bar_chart_mood_per_day);
         BarDataSet barDataSetMoodCount = new BarDataSet(barChartMoodCountList, "Random Moods during the Week");
         initialiseBarChart(barChartMoodCount, barDataSetMoodCount);
+        YAxis yAxisLeft = barChartMoodCount.getAxisLeft();
+        modifYAxisForMoodsChart(yAxisLeft);
 
 
     }
@@ -162,27 +153,29 @@ public class MainActivity extends AppCompatActivity {
     public void intialiseLineChartForWordCount() {
         LineChart lineChart = findViewById(R.id.line_chart_word_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartWordCountList, "Words");
-        initialiseLineChart(lineChart, lineDataSet, "words", "word",lineChartWordLabels);
+        initialiseLineChart(lineChart, lineDataSet, "words", "word", lineChartWordLabels);
     }
 
     public void intialiseLineChartForEntryCount() {
         LineChart lineChart = findViewById(R.id.line_chart_entry_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartEntriesCountList, "Entries");
-        initialiseLineChart(lineChart, lineDataSet, "entries", "entry",lineChartEntriesLabels);
+        initialiseLineChart(lineChart, lineDataSet, "entries", "entry", lineChartEntriesLabels);
 
     }
 
     public void intialiseLinechartForAverageMood() {
-        LineChart lineChart = findViewById(R.id.line_chart_average_mood);
+        lineChartForMood = findViewById(R.id.line_chart_average_mood);
         LineDataSet lineDataSet = new LineDataSet(lineChartMoodCountList, "Moods");
-        initialiseLineChart(lineChart,lineDataSet,"moods","mood",lineChartMoodLabels);
+        initialiseLineChart(lineChartForMood, lineDataSet, "moods", "mood", lineChartMoodLabels);
+        YAxis yAxisLeft = lineChartForMood.getAxisLeft();
+        modifYAxisForMoodsChart(yAxisLeft);
 
     }
 
 
     public void intialisePieChat() {
         PieChart pieChart = findViewById(R.id.pie_chart);
-        Log.i("pie",pieEntries.toString());
+        Log.i("pie", pieEntries.toString());
         PieDataSet pieDataSet = new PieDataSet(pieEntries, "");
         pieDataSet.setDrawValues(false);
         pieDataSet.setColors(decodedColors);
@@ -210,24 +203,36 @@ public class MainActivity extends AppCompatActivity {
 
     public void displayToast(List l, Entry e, String first, String second, String currentSelectedDropDownItem) {
         if (currentSelectedDropDownItem.equals("1 Year")) {
+
             generateToast(l, e, first, second, "weeks ago");
-        } else if (currentSelectedDropDownItem.equals("2 Months")) {
-            generateToast(l, e, first, second, "days ago");
-        } else if (currentSelectedDropDownItem.equals("4 Weeks")) {
-            generateToast(l, e, first, second, "days ago");
-        } else if (currentSelectedDropDownItem.equals("7 Days")) {
+
+        } else {
+
             generateToast(l, e, first, second, "days ago");
         }
 
+
     }
 
-    public void generateToast(List l,Entry e, String first, String second , String third){
+    public void generateToast(List l, Entry e, String first, String second, String third) {
+
         if (e.getY() > 1) {
             Toast.makeText(MainActivity.this, String.valueOf((int) e.getY() + " " + first + "\n" +
-                    ((l.size()-1)-(int)e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
+                    ((l.size() - 1) - (int) e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(MainActivity.this, String.valueOf((int) e.getY() + " " + second + "\n" +
-                    ((l.size()-1)-(int)e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
+                    ((l.size() - 1) - (int) e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextForToastMood(Entry e) {
+        int moodId = 6 - Math.round(e.getY());
+        Mood mood = new Mood(moodId);
+        if (mood.getMoodTextResId() == 0) {
+            return "";
+        } else {
+
+            return getString(mood.getMoodTextResId());
         }
     }
 
@@ -246,18 +251,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-   public void setJSONForSpinner(String dropDownList) throws JSONException {
+    public void setJSONForSpinner(String dropDownList) throws JSONException {
         DataHandler dataHandler = new DataHandler();
-        if(dropDownList.equals("1 Year")) {
+        if (dropDownList.equals("1 Year")) {
             String root = dataHandler.oneYearData.getArray();
             retireveAndParseJSON(root);
-        }else if(dropDownList.equals("2 Months")) {
+        } else if (dropDownList.equals("2 Months")) {
             String root = dataHandler.twoMonthsData.getArray();
             retireveAndParseJSON(root);
-        }else if(dropDownList.equals("4 Weeks")) {
+        } else if (dropDownList.equals("4 Weeks")) {
             String root = dataHandler.fourWeeksData.getArray();
             retireveAndParseJSON(root);
-        }else if(dropDownList.equals("7 Days")) {
+        } else if (dropDownList.equals("7 Days")) {
             String root = dataHandler.sevenDaysData.getArray();
             retireveAndParseJSON(root);
         }
@@ -301,9 +306,9 @@ public class MainActivity extends AppCompatActivity {
 
     public List<Entry> addDataToLineChartListFromJson(JSONObject jsonObject) throws JSONException {
         JSONArray value = (JSONArray) jsonObject.get("data");
-        List <Entry> list = new ArrayList<>();
+        List<Entry> list = new ArrayList<>();
         for (int i = 0; i < value.length(); i++) {
-            list.add(new Entry(i,value.getInt(i)));
+            list.add(new Entry(i, (float) value.getDouble(i)));
         }
         return list;
     }
@@ -311,32 +316,34 @@ public class MainActivity extends AppCompatActivity {
 
     public List<BarEntry> addDataToBarChartListFromJson(JSONObject jsonObject) throws JSONException {
         JSONArray value = (JSONArray) jsonObject.get("data");
-        List <BarEntry> list = new ArrayList<>();
+        List<BarEntry> list = new ArrayList<>();
         for (int i = 0; i < value.length(); i++) {
-            list.add(new BarEntry(i, value.getInt(i)));
+            list.add(new BarEntry(i, (float) value.getDouble(i)));
         }
         return list;
     }
 
-    public List<Integer> addDataToLineChartLabelListFromJson(JSONObject jsonObject) throws  JSONException {
+    public List<Float> addDataToLineChartLabelListFromJson(JSONObject jsonObject) throws JSONException {
         JSONArray labels = (JSONArray) jsonObject.get("labels");
-        List <Integer> list = new ArrayList<>();
+        List<Float> list = new ArrayList<>();
         for (int i = 0; i < labels.length(); i++) {
-            list.add(labels.getInt(i));
+            list.add((float) labels.getDouble(i));
         }
         return list;
 
     }
 
-    public List<PieEntry> addDataToPieChartFromJson(JSONObject jsonObject) throws JSONException{
+    public List<PieEntry> addDataToPieChartFromJson(JSONObject jsonObject) throws JSONException {
         JSONArray value = (JSONArray) jsonObject.get("data");
-        List <PieEntry> list = new ArrayList<>();
+        List<PieEntry> list = new ArrayList<>();
         for (int i = 0; i < value.length(); i++) {
-            list.add(new PieEntry(value.getInt(i),String.valueOf(i+1)));
+            mood = new Mood(i + 1);
+            testTextViewArray.get(i).setText(mood.getFontResId());
+            testTextViewArray.get(i).setTypeface(mMoodsFont);
+            list.add(new PieEntry(value.getInt(i), String.valueOf(i + 1)));
         }
         return list;
     }
-
 
 
     /**
@@ -366,15 +373,13 @@ public class MainActivity extends AppCompatActivity {
         barChart.invalidate();
     }
 
-    public void initialiseLineChart(LineChart lineChart, LineDataSet lineDataSet, final String firstToastString, final String secondToastString, final List<Integer> labelsList) {
+    public void initialiseLineChart(final LineChart lineChart, LineDataSet lineDataSet, final String firstToastString, final String secondToastString, final List<Float> labelsList) {
         lineDataSetproperties(lineDataSet);
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setValueFormatter(null);
 
         LineData lineData = new LineData(lineDataSet);
-        Log.i("lineDataBefore","s");
         lineChart.setData(lineData);
-        Log.i("lineDataBefore","b");
         lineChart.setFadingEdgeLength(20);
 
         YAxis yAxisLeft = lineChart.getAxisLeft();
@@ -394,13 +399,28 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        Log.i("LabelsAfter",labelsList.toString());
+        Log.i("LabelsAfter", labelsList.toString());
         modifyXAxisForGraph(xAxis, false, 0, valueFormatter);
         lineChart.getDescription().setEnabled(false);
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry entry, Highlight h) {
-                displayToast(labelsList, entry, firstToastString, secondToastString,currentSelectedDropDownItem);
+                if (lineChart.equals(lineChartForMood)) {
+                    moodTextForToast = getTextForToastMood(entry);
+
+                    if (currentSelectedDropDownItem.equals("1 Year")) {
+
+                        Toast.makeText(MainActivity.this, moodTextForToast + "\n" +
+                                ((labelsList.size() - 1) - (int) entry.getX()) + " " + "Weeks ago", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, moodTextForToast + "\n" +
+                                ((labelsList.size() - 1) - (int) entry.getX()) + " " + "Days ago", Toast.LENGTH_SHORT).show();
+                    }
+
+                } else {
+                    displayToast(labelsList, entry, firstToastString, secondToastString, currentSelectedDropDownItem);
+
+                }
             }
 
             @Override
@@ -425,6 +445,30 @@ public class MainActivity extends AppCompatActivity {
         yAxis.setTextSize(textSize);
         yAxis.setSpaceBottom(spaceBottom);
 
+
+    }
+
+    public void modifYAxisForMoodsChart(YAxis yAxisLeft) {
+        yAxisLeft.setGranularity(1f);
+        yAxisLeft.setAxisMinimum(0);
+        yAxisLeft.setAxisMaximum(5);
+        ValueFormatter valueFormatter = new ValueFormatter() {
+            @Override
+            public String getAxisLabel(float value, AxisBase axis) {
+                Mood mood = new Mood(6 - (int) value);
+                Log.i("logForMoodid", String.valueOf(mood.getMoodTextResId()));
+
+                if (mood.getMoodTextResId() == 0) {
+                    return "";
+                } else {
+
+                    return getString(mood.getMoodTextResId());
+                }
+
+            }
+        };
+        yAxisLeft.setValueFormatter(valueFormatter);
+        yAxisLeft.setTextSize(10f);
 
     }
 
