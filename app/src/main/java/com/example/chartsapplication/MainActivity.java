@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.IntRange;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
 
@@ -50,17 +51,20 @@ public class MainActivity extends AppCompatActivity {
     private List<Entry> lineChartWordCountList;
     private List<Entry> lineChartEntriesCountList;
     private List<Entry> lineChartMoodCountList;
+    private List<Integer> lineChartWordLabels;
+    private List<Integer> lineChartEntriesLabels;
+    private List<Integer> lineChartMoodLabels;
     private List<BarEntry> barChartMoodCountList;
     private List<PieEntry> pieEntries;
     private List<BarEntry> barChartEntriesWordCountList;
     private List<BarEntry> barChartEntriesCountList;
     private List<String> weekDays;
-    private List<String> weekDaysCopy;
     private List<TextView> testTextViewArray;
     private int mTEXT_SIZE = 12;
     private int[] decodedColors;
     private Typeface mMoodsFont;
     private Mood mood;
+    private String currentSelectedDropDownItem;
 
 
     @Override
@@ -71,9 +75,10 @@ public class MainActivity extends AppCompatActivity {
         setSpinner();
         weekDays = Arrays.asList(new DateFormatSymbols(getApplicationContext().getResources().getConfiguration().locale).getWeekdays());
         weekDays = weekDays.subList(1,8);
-        Log.i("WeekDaysssssssssss",weekDays.toString());
+        intialiseTextViews();
         mMoodsFont = ResourcesCompat.getFont(this, R.font.diaro_moods);
         setDecodedColors();
+        intialisePieChat();
 
 
     }
@@ -88,15 +93,20 @@ public class MainActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
                 if(barChartEntriesWordCountList!= null && barChartEntriesCountList!=null) {
+                    int i = 0;
+                    Log.i("clear",String.valueOf(i++));
                     barChartEntriesCountList.clear();
-                    barChartEntriesWordCountList.clear();
+                    Log.i("clear",String.valueOf(i++));   barChartEntriesWordCountList.clear();
                     lineChartWordCountList.clear();
-                    lineChartEntriesCountList.clear();
+                    Log.i("clear",String.valueOf(i++)); lineChartEntriesCountList.clear();
                     lineChartMoodCountList.clear();
-                    barChartMoodCountList.clear();
+                    Log.i("clear",String.valueOf(i++)); barChartMoodCountList.clear();
+                    Log.i("clear",String.valueOf(i++));
                 }
 
+
                 try {
+                    currentSelectedDropDownItem = String.valueOf(spinner.getSelectedItem());
                     setJSONForSpinner(String.valueOf(spinner.getSelectedItem()));
                     intialiseBarChartForEntryCountPerDay();
                     intialiseBarChartForWordCountPerDay();
@@ -124,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
             mood = new Mood(Integer.valueOf(moods[i]));
             testTextViewArray.get(i).setText(mood.getFontResId());
             testTextViewArray.get(i).setTypeface(mMoodsFont);
-            pieEntries.add(new PieEntry(val, mood.getFontResId()));
+            pieEntries.add(new PieEntry(val, i));
         }
     }
 
@@ -154,13 +164,13 @@ public class MainActivity extends AppCompatActivity {
     public void intialiseLineChartForWordCount() {
         LineChart lineChart = findViewById(R.id.line_chart_word_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartWordCountList, "Words");
-        initialiseLineChart(lineChart, lineDataSet, "words", "word");
+        initialiseLineChart(lineChart, lineDataSet, "words", "word",lineChartWordLabels);
     }
 
     public void intialiseLineChartForEntryCount() {
         LineChart lineChart = findViewById(R.id.line_chart_entry_count);
         LineDataSet lineDataSet = new LineDataSet(lineChartEntriesCountList, "Entries");
-        initialiseLineChart(lineChart, lineDataSet, "entries", "entry");
+        initialiseLineChart(lineChart, lineDataSet, "entries", "entry",lineChartEntriesLabels);
 
     }
 
@@ -180,7 +190,6 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setDrawSliceText(false);
         pieChart.setDrawHoleEnabled(false);
         Legend legend = pieChart.getLegend();
-        legend.setTypeface(mMoodsFont);
         setLegendProperties(legend, true, mTEXT_SIZE, -25, Legend.LegendVerticalAlignment.CENTER, Legend.LegendHorizontalAlignment.LEFT, Legend.LegendOrientation.VERTICAL);
         pieChart.getDescription().setEnabled(false);
         pieChart.invalidate();
@@ -197,13 +206,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void displayToast(Entry e, String first, String second) {
+    public void displayToast(List l, Entry e, String first, String second, String currentSelectedDropDownItem) {
+        if (currentSelectedDropDownItem.equals("1 Year")) {
+            generateToast(l, e, first, second, "weeks ago");
+        } else if (currentSelectedDropDownItem.equals("2 Months")) {
+            generateToast(l, e, first, second, "days ago");
+        } else if (currentSelectedDropDownItem.equals("4 Weeks")) {
+            generateToast(l, e, first, second, "days ago");
+        } else if (currentSelectedDropDownItem.equals("7 Days")) {
+            generateToast(l, e, first, second, "days ago");
+        }
+
+    }
+
+    public void generateToast(List l,Entry e, String first, String second , String third){
         if (e.getY() > 1) {
             Toast.makeText(MainActivity.this, String.valueOf((int) e.getY() + " " + first + "\n" +
-                    (int) -e.getX() + " " + "days ago"), Toast.LENGTH_SHORT).show();
+                    ((l.size()-1)-(int)e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(MainActivity.this, String.valueOf((int) e.getY() + " " + second + "\n" +
-                    (int) -e.getX() + " " + "days ago"), Toast.LENGTH_SHORT).show();
+                    ((l.size()-1)-(int)e.getX()) + " " + third), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -234,31 +256,44 @@ public class MainActivity extends AppCompatActivity {
             String root = dataHandler.fourWeeksData.getArray();
             retireveAndParseJSON(root);
         }else if(dropDownList.equals("7 Days")) {
-            String root = dataHandler.sevendDaysData.getArray();
+            String root = dataHandler.sevenDaysData.getArray();
             retireveAndParseJSON(root);
         }
     }
 
     public void retireveAndParseJSON(String root) throws JSONException {
-        JSONObject jsonObject = new JSONObject(root);
-        JSONObject entriesCount = (JSONObject) jsonObject.get("entries_count");
-        JSONObject dailyWords = (JSONObject) jsonObject.get("daily_words");
-        JSONObject wordsCountDuringLastXDays = (JSONObject) jsonObject.get("words_count_during_last_x_days");
-        JSONObject entriesPerDayOfWeek = (JSONObject) jsonObject.get("entries_per_day_of_week");
-        JSONObject averageDayOfWeekMood = (JSONObject) jsonObject.get("average_day_of_week_mood");
-        JSONObject averageMoodDuringLastXDays = (JSONObject) jsonObject.get("average_mood_during_last_x_days");
+
+
+
+        JSONObject selectedChartJsonObject = new JSONObject(root);
+        JSONObject entriesCount = (JSONObject) selectedChartJsonObject.get("entries_count");
+        JSONObject dailyWords = (JSONObject) selectedChartJsonObject.get("daily_words");
+        JSONObject wordsCountDuringLastXDays = (JSONObject) selectedChartJsonObject.get("words_count_during_last_x_days");
+        JSONObject entriesPerDayOfWeek = (JSONObject) selectedChartJsonObject.get("entries_per_day_of_week");
+        JSONObject averageDayOfWeekMood = (JSONObject) selectedChartJsonObject.get("average_day_of_week_mood");
+        JSONObject averageMoodDuringLastXDays = (JSONObject) selectedChartJsonObject.get("average_mood_during_last_x_days");
+
 
         lineChartEntriesCountList = addDataToLineChartListFromJson(entriesCount);
+
 
         lineChartWordCountList = addDataToLineChartListFromJson(wordsCountDuringLastXDays);
 
         lineChartMoodCountList = addDataToLineChartListFromJson(averageMoodDuringLastXDays);
+
+        lineChartEntriesLabels = addDataToLineChartLabelListFromJson(entriesCount);
+
+
+        lineChartWordLabels = addDataToLineChartLabelListFromJson(wordsCountDuringLastXDays);
+
 
         barChartEntriesCountList = addDataToBarChartListFromJson(entriesPerDayOfWeek);
 
         barChartEntriesWordCountList = addDataToBarChartListFromJson(dailyWords);
 
         barChartMoodCountList = addDataToBarChartListFromJson(averageDayOfWeekMood);
+
+
 
     }
 
@@ -282,6 +317,18 @@ public class MainActivity extends AppCompatActivity {
         return list;
     }
 
+    public List<Integer> addDataToLineChartLabelListFromJson(JSONObject jsonObject) throws  JSONException {
+        JSONArray labels = (JSONArray) jsonObject.get("labels");
+        List <Integer> list = new ArrayList<>();
+        for (int i = 0; i < labels.length(); i++) {
+            list.add(labels.getInt(i));
+        }
+        return list;
+
+    }
+
+
+
     /**
      * all the methods here can be expanded as we introduce properties in the graph
      **/
@@ -299,8 +346,6 @@ public class MainActivity extends AppCompatActivity {
         ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
-                Log.i("values",String.valueOf(value));
-                Log.i("weekdays",weekDays.get((int) value));
                 return weekDays.get((int) value);
             }
         };
@@ -311,28 +356,41 @@ public class MainActivity extends AppCompatActivity {
         barChart.invalidate();
     }
 
-    public void initialiseLineChart(LineChart lineChart, LineDataSet lineDataSet, final String firstToastString, final String secondToastString) {
+    public void initialiseLineChart(LineChart lineChart, LineDataSet lineDataSet, final String firstToastString, final String secondToastString, final List<Integer> labelsList) {
         lineDataSetproperties(lineDataSet);
-        LineData lineData = new LineData(lineDataSet);
-        lineChart.setData(lineData);
-        lineChart.setFadingEdgeLength(20);
         XAxis xAxis = lineChart.getXAxis();
+        xAxis.setValueFormatter(null);
+
+        LineData lineData = new LineData(lineDataSet);
+        Log.i("lineDataBefore","s");
+        lineChart.setData(lineData);
+        Log.i("lineDataBefore","b");
+        lineChart.setFadingEdgeLength(20);
+
         YAxis yAxisLeft = lineChart.getAxisLeft();
         YAxis yAxis = lineChart.getAxisRight();
         modifyYAxisForGraph(yAxisLeft, true, 0, mTEXT_SIZE);
         modifyYAxisForGraph(yAxis, false, 0, mTEXT_SIZE);
         ValueFormatter valueFormatter = new ValueFormatter() {
+
             @Override
             public String getAxisLabel(float value, AxisBase axis) {
-                return String.valueOf(-(int) value);
+                if (labelsList.size() <= (int) value) {
+                    return "";
+
+                } else {
+                    return (String.valueOf(labelsList.get((int) value)));
+
+                }
             }
         };
+        Log.i("LabelsAfter",labelsList.toString());
         modifyXAxisForGraph(xAxis, false, 0, valueFormatter);
         lineChart.getDescription().setEnabled(false);
         lineChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
-            public void onValueSelected(Entry e, Highlight h) {
-                displayToast(e, firstToastString, secondToastString);
+            public void onValueSelected(Entry entry, Highlight h) {
+                displayToast(labelsList, entry, firstToastString, secondToastString,currentSelectedDropDownItem);
             }
 
             @Override
