@@ -5,13 +5,10 @@ import org.dom4j.io.XMLWriter;
 import org.jetbrains.annotations.NotNull;
 
 
-import javax.swing.text.html.HTML;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 public class Main {
@@ -33,7 +30,8 @@ public class Main {
     private static  List<Node> notesList;
     private static  List<Node> locationsList;
     private static  List<Node> entriesContentList;
-    private static  HashMap<String,String> tagsAndUidMap;
+    private static  HashMap<String,String> uidForTagsMap;
+    private static  HashMap<String,String> uidForLocationMap;
 
     private static Folder folder;
     private static Tags tags;
@@ -63,9 +61,19 @@ public class Main {
         entriesContentList = document.selectNodes("/en-export/note/content");
 
         //generating unique id for every tag and mapping it.
-        tagsAndUidMap = new HashMap<String, String>();
+        uidForTagsMap = new HashMap<String, String>();
         for(Node tags_title : tagsList){
-            tagsAndUidMap .put(tags_title.getText(),Entry.generateRandomUid());
+            if(tagsList.size() > 0 ) {
+                uidForTagsMap.put(tags_title.getText(), Entry.generateRandomUid());
+            }
+        }
+
+        //generating unique id for every location and mapping it.
+        uidForLocationMap = new HashMap<String, String>();
+        for(Node location : locationsList){
+            if(location.selectSingleNode("latitude")!=null && location.selectSingleNode("longitude")!=null) {
+                uidForLocationMap.put(Entry.addLocation(location.selectSingleNode("latitude").getText(), location.selectSingleNode("longitude").getText()), Entry.generateRandomUid());
+            }
         }
 
         System.out.println("----------------------------");
@@ -79,12 +87,12 @@ public class Main {
         Element root = createdXmlDocument.addElement("data").addAttribute("version","2");
 
         for (Node node : notesList) {
+            createFolderTag(root);
             createTagsTag(root,node);
         }
 
         for (Node node : locationsList) {
             createLocationTag(root,node);
-            createFolderTag(root);
         }
 
         //displaying on the console
@@ -127,7 +135,7 @@ public class Main {
             Element row = tagsRoot.addElement("r");
 
             for(Node tag_node : evernote_tags){
-                row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(tagsAndUidMap.get(tag_node.getText()));
+                row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(uidForTagsMap.get(tag_node.getText()));
                 row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tag_node.getText());
             }
             return row;
@@ -139,7 +147,7 @@ public class Main {
     }
 
     public static Element createLocationTag(@NotNull Element root, Node node){
-        if (node !=null) {
+        if (node != null) {
 
             if (node.selectSingleNode("latitude") != null &&
                     node.selectSingleNode("longitude") != null) {
@@ -149,19 +157,17 @@ public class Main {
 
                     Element locationsRoot = root.addElement("table").addAttribute("title", LOCATION);
                     Element row = locationsRoot.addElement("r");
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(LOCATION_UID);
+                    row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(uidForLocationMap.get(Entry.addLocation(latitude, longitude)));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(Entry.addLocation(latitude, longitude));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(DEFAULT_ZOOM);
-
-                    location = new Location(Entry.addLocation(latitude, longitude), LOCATION_UID, DEFAULT_ZOOM);
                     return row;
             }
         }
         return null;
     }
 
-    public static Element createEntryTag(@NotNull Element root, Node node){
-
-    }
+//    public static Element createEntryTag(@NotNull Element root, Node node){
+//
+//    }
 
 }
