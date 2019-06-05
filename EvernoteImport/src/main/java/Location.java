@@ -1,14 +1,12 @@
 public class Location {
-    public String name;
+    public String title;
     public String location_uid;
-    public double longitude;
-    public double latitude;
+    public String zoom;
 
-    public Location(String name, String location_uid, double longitude, double latitude) {
-        this.name = name;
+    public Location(String title, String location_uid, String zoom) {
+        this.title = title;
         this.location_uid = location_uid;
-        this.longitude = longitude;
-        this.latitude = latitude;
+        this.zoom = zoom;
     }
 
 }
