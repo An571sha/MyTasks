@@ -5,10 +5,13 @@ import org.dom4j.io.XMLWriter;
 import org.jetbrains.annotations.NotNull;
 
 
+import javax.swing.text.html.HTML;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class Main {
@@ -27,8 +30,10 @@ public class Main {
     private static String FOLDER_COLOR = "#F0B913";
 
     private static  List<Node> tagsList;
+    private static  List<Node> notesList;
     private static  List<Node> locationsList;
     private static  List<Node> entriesContentList;
+    private static  HashMap<String,String> tagsAndUidMap;
 
     private static Folder folder;
     private static Tags tags;
@@ -52,9 +57,17 @@ public class Main {
     //code will be configured later for multiple entries to duplicate the xml from Diaro.
     public static void getNodes(Document document) {
 
-        tagsList = document.selectNodes("/en-export/note");
+        notesList = document.selectNodes("/en-export/note");
+        tagsList = document.selectNodes("/en-export/note/tag");
         locationsList = document.selectNodes("/en-export/note/note-attributes");
         entriesContentList = document.selectNodes("/en-export/note/content");
+
+        //generating unique id for every tag and mapping it.
+        tagsAndUidMap = new HashMap<String, String>();
+        for(Node tags_title : tagsList){
+            tagsAndUidMap .put(tags_title.getText(),Entry.generateRandomUid());
+        }
+
         System.out.println("----------------------------");
 
     }
@@ -65,7 +78,7 @@ public class Main {
         Document createdXmlDocument = DocumentHelper.createDocument();
         Element root = createdXmlDocument.addElement("data").addAttribute("version","2");
 
-        for (Node node : tagsList) {
+        for (Node node : notesList) {
             createTagsTag(root,node);
         }
 
@@ -74,9 +87,8 @@ public class Main {
             createFolderTag(root);
         }
 
-
-        OutputFormat format = OutputFormat.createPrettyPrint();
         //displaying on the console
+        OutputFormat format = OutputFormat.createPrettyPrint();
         XMLWriter writer = null;
         try {
             writer = new XMLWriter( System.out, format );
@@ -90,7 +102,7 @@ public class Main {
         }
         return createdXmlDocument;
     }
-    //when data is configured later, it would go through each node in search for tags and save those tags in Tags[]
+
 
     public static Element createFolderTag(@NotNull Element root){
         Element folderRoot = root.addElement("table").addAttribute("title",FOLDER);
@@ -107,21 +119,17 @@ public class Main {
     }
 
     public static Element createTagsTag(@NotNull Element root, Node node){
+
         if (node.selectNodes("tag") != null) {
 
             List<Node> evernote_tags = node.selectNodes("tag");
-            Element tagsRoot = root.addElement("tags").addAttribute("title", TAGS);
+            Element tagsRoot = root.addElement("tagsId").addAttribute("title", TAGS);
             Element row = tagsRoot.addElement("r");
 
-            for(Node tags : evernote_tags) {
-
-                String TAG_UID = Entry.generateRandomUid();
-                row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(TAG_UID);
-                row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tags.getText());
+            for(Node tag_node : evernote_tags){
+                row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(tagsAndUidMap.get(tag_node.getText()));
+                row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tag_node.getText());
             }
-
-          //  tags = new Tags(TAG_UID, tags.toString());
-
             return row;
 
         } else {
@@ -152,8 +160,8 @@ public class Main {
         return null;
     }
 
-//    public static Element createEntryTag(@NotNull Element root, Node node){
-//
-//    }
+    public static Element createEntryTag(@NotNull Element root, Node node){
+
+    }
 
 }
