@@ -22,6 +22,7 @@ public class Entry {
     public final static String KEY_ENTRY_LOCATION_NAME = "title";
     public final static String KEY_ENTRY_LOCATION_ZOOM = "zoom";
     public final static String KEY_ENTRY_TAGS_UID = "tag_uid";
+    public final static String KEY_ENTRY_TAGS = "tags";
     public final static String KEY_ENTRY_TAGS_TITLE = "title";
     public final static String KEY_ENTRY_PRIMARY_PHOTO_UID = "primary_photo_uid";
 
@@ -30,32 +31,32 @@ public class Entry {
 
     public static String dateFormat = dateFormatUS;
 
+
     public String uid;
     public String date;
     public String tz_offset;
     public String title;
     public String text;
-    public Folder folder;
-    public Location location;
-    public Tags tags;
+    public String folder_uid;
+    public String location_uid;
+    public String tags;
     public String primary_photo_uid;
 
-    public Entry(String date, String text ,Folder folder, Location location ,Tags tag) {
+    public Entry(String date, String text, String title, String folder_uid, String location_uid, String tags) {
 
         this.uid = generateRandomUid();
         this.date = String.valueOf(dateToTimeStamp(date));
         this.tz_offset = "-05:00";
-        this.folder = folder;
-        this.location = location;
         this.title = "";
         this.text = text;
-        this.tags = tag;
+        this.folder_uid = "";
+        this.location_uid = "";
+        this.tags = "";
         this.primary_photo_uid = "";
 
     }
 
     public Entry() {
-
         // TODO Auto-generated constructor stub
     }
 
@@ -68,8 +69,8 @@ public class Entry {
         buf.append(addColumn(KEY_ENTRY_TZ_OFFSET, tz_offset));
         buf.append(addColumn(KEY_ENTRY_TITLE, title));
         buf.append(addColumn(KEY_ENTRY_TEXT, text));
-        buf.append(addColumn(KEY_ENTRY_FOLDER_UID, folder));
-        buf.append(addColumn(KEY_ENTRY_LOCATION_UID, location));
+        buf.append(addColumn(KEY_ENTRY_FOLDER_UID, folder_uid));
+        buf.append(addColumn(KEY_ENTRY_LOCATION_UID, location_uid));
         buf.append(addColumn(KEY_ENTRY_TAGS_UID, tags));
         buf.append(addColumn(KEY_ENTRY_PRIMARY_PHOTO_UID, primary_photo_uid));
 
