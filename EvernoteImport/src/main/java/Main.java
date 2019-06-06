@@ -1,4 +1,3 @@
-import org.apache.commons.text.StringEscapeUtils;
 import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
@@ -10,7 +9,6 @@ import org.jsoup.Jsoup;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.cert.CRLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +23,8 @@ public class Main {
     private static String LOCATION = "diaro_locations";
     private static String DEFAULT_ZOOM = "11";
 
+    private static String TIMEZONE_OFFSET = "00:00";
+
     private static String FOLDER_UID = Entry.generateRandomUid();
     private static String FOLDER_TITLE = "Evernote";
     private static String FOLDER_COLOR = "#F0B913";
@@ -36,13 +36,13 @@ public class Main {
     private static String CONTENT = "content";
     private static String CREATED = "created";
 
-    private static  HashMap<Integer,List<String>> tagsForEachEntry;
-    private static  HashMap<String,String> uidForEachTag;
-    private static  HashMap<String,String> uidForLocationMap;
+    private static HashMap<Integer, List<String>> tagsForEachEntry;
+    private static HashMap<String, String> uidForEachTag;
+    private static HashMap<String, String> uidForLocations;
 
-    private static  List<String> tags_text;
-    private static  List<Node> tagsList;
-    private static  List<Node> notesList;
+    private static List<String> tags_text;
+    private static List<Node> tagsList;
+    private static List<Node> notesList;
 
     private static int keyCounter = 0;
 
@@ -68,17 +68,17 @@ public class Main {
 
         //generating unique id for every tag and mapping it.
         uidForEachTag = new HashMap<String, String>();
-        for(Node tags_title : tagsList){
-            if(tagsList.size() > 0 ) {
+        for (Node tags_title : tagsList) {
+            if (tagsList.size() > 0) {
                 uidForEachTag.put(tags_title.getText(), Entry.generateRandomUid());
             }
         }
 
         //generating unique id for every location and mapping it.
-        uidForLocationMap = new HashMap<String, String>();
-        for(Node location : notesList){
-            if(location.selectSingleNode(LATITUDE)!=null && location.selectSingleNode(LONGITUDE)!=null) {
-                uidForLocationMap.put(Entry.addLocation(location.selectSingleNode(LATITUDE).getText(), location.selectSingleNode(LONGITUDE).getText()), Entry.generateRandomUid());
+        uidForLocations = new HashMap<String, String>();
+        for (Node location : notesList) {
+            if (location.selectSingleNode(LATITUDE) != null && location.selectSingleNode(LONGITUDE) != null) {
+                uidForLocations.put(Entry.addLocation(location.selectSingleNode(LATITUDE).getText(), location.selectSingleNode(LONGITUDE).getText()), Entry.generateRandomUid());
             }
         }
 
@@ -86,13 +86,13 @@ public class Main {
 
     }
 
-    public static Document createXMLDocument(){
+    public static Document createXMLDocument() {
         getNodes(enexDocument);
 
         Document createdXmlDocument = DocumentHelper.createDocument();
-        Element root = createdXmlDocument.addElement("data").addAttribute("version","2");
+        Element root = createdXmlDocument.addElement("data").addAttribute("version", "2");
 
-        tagsForEachEntry = new HashMap<Integer,List<String>>();
+        tagsForEachEntry = new HashMap<Integer, List<String>>();
 
 
         for (Node node : notesList) {
@@ -100,47 +100,42 @@ public class Main {
         }
 
         for (Node node : notesList) {
-            generateTagTagsForXml(root,node);
+            generateTagTagsForXml(root, node);
         }
 
 
         for (Node node : notesList) {
-            generateLocationTagForXml(root,node);
+            generateLocationTagForXml(root, node);
         }
         //resetting the keyCounter to use parse through the map for tags
         keyCounter = 0;
 
         for (Node node : notesList) {
-            generateEntriesTagForXml(root,node);
+            generateEntriesTagForXml(root, node);
         }
 
         //displaying on the console
         OutputFormat format = OutputFormat.createPrettyPrint();
         XMLWriter writer = null;
         try {
-            writer = new XMLWriter( System.out, format );
+            writer = new XMLWriter(System.out, format);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
         try {
-            writer.write( createdXmlDocument );
+            writer.write(createdXmlDocument);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return createdXmlDocument;
     }
 
-    //remove these methods later
-    public static void generateFolderTagForXml(@NotNull Element root){
-
-
-        Element row = generateRow(FOLDER,root);
+    public static void generateFolderTagForXml(@NotNull Element root) {
+        Element row = generateRow(FOLDER, root);
 
         row.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
         row.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
         row.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
-
-
     }
 
     /**
@@ -149,97 +144,97 @@ public class Main {
      * UidForEachTag is used to fetch uid for a given tag which has already been mapped in the method above.
      */
 
-    public static void generateTagTagsForXml(@NotNull Element root, Node node){
+    public static void generateTagTagsForXml(@NotNull Element root, Node node) {
 
-        if (node.selectNodes(TAG) != null) {
+        if (node.selectSingleNode(TAG) != null) {
 
             //using KeyCounter as key to store all the tags of an Entry inside HashMap(key: counter, value: {tags_text})
             keyCounter++;
-            tags_text =  new ArrayList<String>();
+            tags_text = new ArrayList<String>();
             List<Node> evernote_tags = node.selectNodes(TAG);
-            Element row = generateRow(TAGS,root);
+            Element row = generateRow(TAGS, root);
 
             //using uidForTag to get the uid for already mapped and stored list of tags.
-            for(Node tag_node : evernote_tags){
+            for (Node tag_node : evernote_tags) {
                 row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(uidForEachTag.get(tag_node.getText()));
                 row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tag_node.getText());
                 tags_text.add(uidForEachTag.get(tag_node.getText()));
 
             }
 
-            tagsForEachEntry.put(keyCounter,tags_text);
-
+            tagsForEachEntry.put(keyCounter, tags_text);
         }
     }
 
-    public static void generateLocationTagForXml(@NotNull Element root, Node node){
+    public static void generateLocationTagForXml(@NotNull Element root, Node node) {
         if (node != null) {
 
             if (node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
 
-                    String latitude = node.selectSingleNode(LATITUDE).getText();
-                    String longitude = node.selectSingleNode(LONGITUDE).getText();
+                String latitude = node.selectSingleNode(LATITUDE).getText();
+                String longitude = node.selectSingleNode(LONGITUDE).getText();
 
-                    Element row = generateRow(LOCATION,root);
+                Element row = generateRow(LOCATION, root);
 
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(uidForLocationMap.get(Entry.addLocation(latitude, longitude)));
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(Entry.addLocation(latitude, longitude));
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(DEFAULT_ZOOM);
+                row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(uidForLocations.get(Entry.addLocation(latitude, longitude)));
+                row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(Entry.addLocation(latitude, longitude));
+                row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(DEFAULT_ZOOM);
             }
         }
     }
 
-    public static void generateEntriesTagForXml(@NotNull Element root, Node node){
+    public static void generateEntriesTagForXml(@NotNull Element root, Node node) {
 
 
-        if(node != null){
+        if (node != null) {
 
-            Element row = generateRow(ENTRY,root);
+            Element row = generateRow(ENTRY, root);
 
             String uid = Entry.generateRandomUid();
             row.addElement(Entry.KEY_UID).addText(uid);
 
-            if(node.selectSingleNode(TITLE)!= null) {
+            if (node.selectSingleNode(TITLE) != null) {
                 String title = node.selectSingleNode(TITLE).getText();
                 row.addElement(Entry.KEY_ENTRY_TITLE).addText(title);
             }
-            if(node.selectSingleNode(CONTENT)!= null) {
+            if (node.selectSingleNode(CONTENT) != null) {
                 String text = node.selectSingleNode(CONTENT).getText();
                 // using Jsoup to parse HTML inside Content
                 String parsedHtml = Jsoup.parse(text).text();
                 row.addElement(Entry.KEY_ENTRY_TEXT).addText(parsedHtml);
             }
 
-            if(node.selectSingleNode(LATITUDE)!=null && node.selectSingleNode(LONGITUDE)!=null){
-                String location_uid = uidForLocationMap.get(Entry.addLocation(node.selectSingleNode(LATITUDE).getText(),
-                        node.selectSingleNode(LONGITUDE).getText()));
+            if (node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
+                String location_uid = uidForLocations.get(Entry.addLocation(node.selectSingleNode(LATITUDE).getText(), node.selectSingleNode(LONGITUDE).getText()));
                 row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(location_uid);
             }
 
-            if(node.selectNodes(TAG) != null ) {
+            if (node.selectSingleNode(TAG) != null) {
                 keyCounter++;
-                List tag = tagsForEachEntry.get(keyCounter);
+                List<String> tag = tagsForEachEntry.get(keyCounter);
                 row.addElement(Entry.KEY_ENTRY_TAGS).addText(String.valueOf(tag));
             }
 
-            if(node.selectSingleNode(CREATED)!= null) {
-                //only date is being is being formatted
-                String date = node.selectSingleNode(CREATED).getText().substring(0,8);
-                String month = date.substring(4,6);
-                String day = date.substring(6,8);
-                String year = date.substring(2,4);
-                String formattedDate = String.format("%s/%s/%s",month,day,year);
+            if (node.selectSingleNode(CREATED) != null) {
+                //only date is being is being formatted here
+                String date = node.selectSingleNode(CREATED).getText().substring(0, 8);
+                String month = date.substring(4, 6);
+                String day = date.substring(6, 8);
+                String year = date.substring(2, 4);
+                String formattedDate = String.format("%s/%s/%s", month, day, year);
                 row.addElement(Entry.KEY_ENTRY_DATE).addText(String.valueOf(Entry.dateToTimeStamp(formattedDate)));
             }
 
             row.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
+            //no offset found in evernote
+            row.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(TIMEZONE_OFFSET);
 
         }
     }
 
-    public static Element generateRow(String tableName , Element root){
+    public static Element generateRow(String tableName, Element root) {
 
-        Element folderRoot = root.addElement("table").addAttribute("title",tableName);
+        Element folderRoot = root.addElement("table").addAttribute("title", tableName);
         return folderRoot.addElement("r");
     }
 
