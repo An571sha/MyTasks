@@ -124,7 +124,7 @@ public class Entry {
 
     }
 
-    public long dateToTimeStamp(String date) {
+    public static long dateToTimeStamp(String date) {
         DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yy");
         DateTime dt = formatter.parseDateTime(date);
         DateTime dtNew = dt.plusHours(18);

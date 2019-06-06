@@ -1,8 +1,10 @@
+import org.apache.commons.text.StringEscapeUtils;
 import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 import org.jetbrains.annotations.NotNull;
+import org.jsoup.Jsoup;
 
 
 import java.io.File;
@@ -46,7 +48,7 @@ public class Main {
 
 
     public static void main(String[] args) throws DocumentException {
-        File inputFile = new File("C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex");
+        File inputFile = new File("C:\\Users\\Animesh\\Downloads\\evernoteExport\\sample.enex");
         enexDocument = parse(inputFile);
         createXMLDocument();
 
@@ -105,7 +107,7 @@ public class Main {
         for (Node node : notesList) {
             generateLocationTagForXml(root,node);
         }
-
+        //resetting the keyCounter to use parse through the map for tags
         keyCounter = 0;
 
         for (Node node : notesList) {
@@ -203,7 +205,9 @@ public class Main {
             }
             if(node.selectSingleNode(CONTENT)!= null) {
                 String text = node.selectSingleNode(CONTENT).getText();
-                row.addElement(Entry.KEY_ENTRY_TEXT).addText(text);
+                // using Jsoup to parse HTML inside Content
+                String parsedHtml = Jsoup.parse(text).text();
+                row.addElement(Entry.KEY_ENTRY_TEXT).addText(parsedHtml);
             }
 
             if(node.selectSingleNode(LATITUDE)!=null && node.selectSingleNode(LONGITUDE)!=null){
@@ -219,8 +223,13 @@ public class Main {
             }
 
             if(node.selectSingleNode(CREATED)!= null) {
-                String date = node.selectSingleNode(CREATED).getText().substring(0,7);
-                row.addElement(Entry.KEY_ENTRY_DATE).addText(date);
+                //only date is being is being formatted
+                String date = node.selectSingleNode(CREATED).getText().substring(0,8);
+                String month = date.substring(4,6);
+                String day = date.substring(6,8);
+                String year = date.substring(2,4);
+                String formattedDate = String.format("%s/%s/%s",month,day,year);
+                row.addElement(Entry.KEY_ENTRY_DATE).addText(String.valueOf(Entry.dateToTimeStamp(formattedDate)));
             }
 
             row.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
