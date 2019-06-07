@@ -245,6 +245,7 @@ public class Main {
         for (Node node : notesList) {
 
             if (node.selectSingleNode(RESOURCE) != null) {
+
                 List<Node> attachments = node.selectNodes(RESOURCE);
 
 
