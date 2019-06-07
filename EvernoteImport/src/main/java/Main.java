@@ -309,7 +309,6 @@ public class Main {
                     ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
                     out.putNextEntry(imageOutputStream);
                     out.write(decoded);
-                    out.closeEntry();
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -321,6 +320,8 @@ public class Main {
         try {
             out.putNextEntry(xmlOutputStream);
             out.write(toBytes(createdDocument));
+            out.finish();
+            out.flush();
             out.closeEntry();
         } catch (IOException e) {
             e.printStackTrace();
