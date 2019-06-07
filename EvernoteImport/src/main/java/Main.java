@@ -1,20 +1,24 @@
 import org.dom4j.*;
-import org.dom4j.io.OutputFormat;
+
 import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
+
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class Main {
 
     private static Document enexDocument;
+    private static Document createdDocument;
 
     private static String FOLDER = "diaro_folders";
     private static String ENTRY = "diaro_entries";
@@ -41,6 +45,7 @@ public class Main {
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForLocations;
 
+    private static List<String> entries_uid;
     private static List<String> tags_text;
     private static List<Node> tagsList;
     private static List<Node> notesList;
@@ -51,7 +56,8 @@ public class Main {
     public static void main(String[] args) throws DocumentException {
         File inputFile = new File("C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex");
         enexDocument = parse(inputFile);
-        createXMLDocument();
+        createdDocument = createXMLDocument();
+        createZipFile(enexDocument,createdDocument);
 
     }
 
@@ -67,7 +73,7 @@ public class Main {
         notesList = document.selectNodes("/en-export/note");
         tagsList = document.selectNodes("/en-export/note/tag");
 
-        //generating unique id for every tag and maps it.
+        //generating unique id for every tag and mapping it.
         uidForEachTag = new HashMap<String, String>();
         for (Node tags_title : tagsList) {
             if (tagsList.size() > 0) {
@@ -75,19 +81,17 @@ public class Main {
             }
         }
 
-        //generating unique id for every location and maps it.
+        //generating unique id for every location and mapping it.
         uidForLocations = new HashMap<String, String>();
         for (Node location : notesList) {
             if (location.selectSingleNode(LATITUDE) != null && location.selectSingleNode(LONGITUDE) != null) {
                 uidForLocations.put(Entry.addLocation(location.selectSingleNode(LATITUDE).getText(), location.selectSingleNode(LONGITUDE).getText()), Entry.generateRandomUid());
             }
         }
-
-        System.out.println("----------------------------");
-
     }
 
     public static Document createXMLDocument() {
+
         getNodes(enexDocument);
 
         Document createdXmlDocument = DocumentHelper.createDocument();
@@ -101,26 +105,10 @@ public class Main {
 
         generateLocationTagForXml(root);
 
-        //resetting the keyCounter to parse through the map for tags
-        keyCounter = 0;
-
         generateEntriesTagForXml(root);
 
         generateAttachmentsForXml(root);
 
-
-        //displaying on the console
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        OutputStream outputStream;
-        XMLWriter writer;
-        try {
-            outputStream = new FileOutputStream("C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\created.xml");
-//            writer = new XMLWriter(System.out, format);
-            writer = new XMLWriter(outputStream, format);
-            writer.write(createdXmlDocument);
-        } catch (IOException e ) {
-            e.printStackTrace();
-        }
         return createdXmlDocument;
     }
 
@@ -132,7 +120,7 @@ public class Main {
 
             Element row =  folderRoot.addElement("r");
 
-            row.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
+            row.addElement(Entry.KEY_UID).addText(FOLDER_UID);
             row.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
             row.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
         }
@@ -145,37 +133,36 @@ public class Main {
      */
 
     public static void generateTagTagsForXml(@NotNull Element root) {
-        Element folderRoot = root.addElement("table").addAttribute("title", TAGS);
+        Element folderRoot = generateTableTag(TAG,TAGS,root);
 
         for (Node node : notesList) {
 
             if (node.selectSingleNode(TAG) != null) {
 
                 //using KeyCounter as key to store all the tags of an Entry inside HashMap(key: counter, value: {tags_text})
-                keyCounter++;
+
                 tags_text = new ArrayList<String>();
                 List<Node> evernote_tags = node.selectNodes(TAG);
                 Element row =  folderRoot.addElement("r");;
 
                 //using uidForTag to get the uid for already mapped and stored list of tags.
                 for (Node tag_node : evernote_tags) {
-                    row.addElement(Entry.KEY_ENTRY_TAGS_UID).addText(uidForEachTag.get(tag_node.getText()));
+                    row.addElement(Entry.KEY_UID).addText(uidForEachTag.get(tag_node.getText()));
                     row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tag_node.getText());
                     tags_text.add(uidForEachTag.get(tag_node.getText()));
 
                 }
 
                 tagsForEachEntry.put(keyCounter, tags_text);
+                keyCounter++;
             }
         }
     }
 
     public static void generateLocationTagForXml(@NotNull Element root) {
-        Element folderRoot = root.addElement("table").addAttribute("title", LOCATION);
+        Element folderRoot = generateTableTag(LATITUDE,LOCATION,root);
 
         for (Node node : notesList) {
-
-            if (node != null) {
 
                 if (node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
 
@@ -184,26 +171,29 @@ public class Main {
 
                     Element row =  folderRoot.addElement("r");;
 
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(uidForLocations.get(Entry.addLocation(latitude, longitude)));
+                    row.addElement(Entry.KEY_UID).addText(uidForLocations.get(Entry.addLocation(latitude, longitude)));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(Entry.addLocation(latitude, longitude));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(DEFAULT_ZOOM);
                 }
-            }
+
         }
     }
 
     public static void generateEntriesTagForXml(@NotNull Element root) {
-
+        //resetting the keyCounter to loop through the map for tags
+        keyCounter = 0;
         Element folderRoot = root.addElement("table").addAttribute("title", ENTRY);
+        entries_uid = new ArrayList<String>();
 
         for (Node node : notesList) {
 
-
             if (node != null) {
 
-                Element row =  folderRoot.addElement("r");;
+                Element row =  folderRoot.addElement("r");
 
                 String uid = Entry.generateRandomUid();
+                entries_uid.add(uid);
+
                 row.addElement(Entry.KEY_UID).addText(uid);
 
                 if (node.selectSingleNode(TITLE) != null) {
@@ -223,9 +213,9 @@ public class Main {
                 }
 
                 if (node.selectSingleNode(TAG) != null) {
+                    List<String> tags = tagsForEachEntry.get(keyCounter);
+                    row.addElement(Entry.KEY_ENTRY_TAGS).addText("," + String.join(",",tags)+ ",");
                     keyCounter++;
-                    List<String> tag = tagsForEachEntry.get(keyCounter);
-                    row.addElement(Entry.KEY_ENTRY_TAGS).addText(String.valueOf(tag));
                 }
 
                 if (node.selectSingleNode(CREATED) != null) {
@@ -247,39 +237,30 @@ public class Main {
     }
 
     public static void generateAttachmentsForXml(@NotNull Element root){
-        Element folderRoot = root.addElement("table").addAttribute("title", ATTACHMENTS);
+        //resetting the keyCounter to loop through the uid's for entries
+        keyCounter = 0;
+
+        Element folderRoot = generateTableTag(RESOURCE,ATTACHMENTS,root);
 
         for (Node node : notesList) {
 
             if (node.selectSingleNode(RESOURCE) != null) {
-                //           Element row = generateRow(ATTACHMENTS, root);
                 List<Node> attachments = node.selectNodes(RESOURCE);
-                String partSeparator = ",";
-                byte[] decoded;
+
 
                 for (Node attachment : attachments) {
                     String mime = attachment.selectSingleNode("mime").getText();
-                    String baseEncoding = attachment.selectSingleNode("data").getText();
                     String fileName = attachment.selectSingleNode("resource-attributes/file-name").getText();
 
                     if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
-
-                        if (baseEncoding.contains(partSeparator)) {
-                            String encodedImg = baseEncoding.split(partSeparator)[1];
-                            decoded = Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
-                        } else {
-                            decoded = Base64.getMimeDecoder().decode(baseEncoding);
-                        }
-
-                        try {
-                            FileOutputStream outputStream = new FileOutputStream("C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\media\\photos" + fileName);
-                            outputStream.write(decoded);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-
+                        Element row =  folderRoot.addElement("r");
+                        row.addElement(Entry.KEY_UID).addText(Entry.generateRandomUid());
+                        row.addElement(Entry.KEY_ENTRY_UID).addText(entries_uid.get(keyCounter));
+                        row.addElement("type").addText("photo");
+                        row.addElement("filename").addText(fileName);
+                        //could ot find position in enex
                     }
+                    keyCounter++;
                 }
             }
         }
@@ -287,4 +268,67 @@ public class Main {
     }
 
 
+    public static Element generateTableTag(String s1, String s2 , Element root){
+        for (Node node : notesList) {
+
+            if(node.selectSingleNode(s1) != null){
+
+                return root.addElement("table").addAttribute("title", s2);
+            }
+        }
+        return null;
+    }
+
+    public static void  createZipFile(Document olddocument , Document createdDocument) {
+        File zipFile = new File("C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip");
+        ZipOutputStream out = null;
+
+        try {
+            out = new ZipOutputStream(new FileOutputStream(zipFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        List<Node> data_nodes = olddocument.selectNodes("/en-export/note/resource");
+        String partSeparator = ",";
+        byte[] decoded;
+
+        for(Node attachment : data_nodes) {
+            String baseEncoding = attachment.selectSingleNode("data").getText();
+            String fileName = attachment.selectSingleNode("resource-attributes/file-name").getText();
+            String mime = attachment.selectSingleNode("mime").getText();
+            if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+
+                if (baseEncoding.contains(partSeparator)) {
+                    String encodedImg = baseEncoding.split(partSeparator)[1];
+                    decoded = Base64.getMimeDecoder().decode(encodedImg.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    decoded = Base64.getMimeDecoder().decode(baseEncoding);
+                }
+                try {
+                    ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
+                    out.putNextEntry(imageOutputStream);
+                    out.write(decoded);
+                    out.closeEntry();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        ZipEntry xmlOutputStream = new ZipEntry("test.xml");
+        try {
+            out.putNextEntry(xmlOutputStream);
+            out.write(toBytes(createdDocument));
+            out.closeEntry();
+        } catch (IOException e) {
+            e.printStackTrace();
+
+        }
+    }
+
+    public static byte[] toBytes(Document document) {
+        String text = document.asXML();
+        return text.getBytes();
+    }
 }

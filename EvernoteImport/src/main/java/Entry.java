@@ -11,6 +11,7 @@ import org.joda.time.format.DateTimeFormatter;
 public class Entry {
 
     public final static String KEY_UID = "uid";
+    public final static String KEY_ENTRY_UID = "entry_uid";
     public final static String KEY_ENTRY_DATE = "date";
     public final static String KEY_ENTRY_TZ_OFFSET = "tz_offset";
     public final static String KEY_ENTRY_TITLE = "title";
