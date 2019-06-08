@@ -1,26 +1,30 @@
+import org.apache.commons.lang3.ObjectUtils;
 import org.dom4j.*;
 
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 
+import org.dom4j.io.XMLWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 
 import java.io.*;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class Main {
+/**
+ *
+ */
+public class Import {
 
     private static Document enexDocument;
     private static Document createdDocument;
 
     private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip";
+    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.xml";
 
     private static String diaro_folders = "diaro_folders";
     private static String diaro_entries = "diaro_entries";
@@ -59,28 +63,41 @@ public class Main {
     private static int keyCounter = 0;
 
 
+    /**
+     * @param args
+     * @throws DocumentException
+     */
     public static void main(String[] args) throws DocumentException {
         File inputFile = new File(ENEX_DOCUMENT_PATH);
         enexDocument = parse(inputFile);
         createdDocument = createXMLDocument();
-        createZipFile(enexDocument,createdDocument);
+        createZipOrXmlFile(enexDocument,createdDocument);
 
     }
 
-    public static Document parse(File file) throws DocumentException {
+    /**
+     * @param file
+     * @return parsed xml Document
+     * @throws DocumentException
+     */
+    private static Document parse(File file) throws DocumentException {
         SAXReader reader = new SAXReader();
         Document document = reader.read(file);
         return document;
     }
 
 
-    public static void getNodes(Document document) {
+    /** collects all the nodes inside a list or a map
+     *
+     * @param document enex document
+     */
+    private static void getNodes(Document document) {
 
         notesList = document.selectNodes(NOTES);
         tagsList = document.selectNodes(TAGS);
 
         //generating unique id for every tag and mapping it.
-        uidForEachTag = new HashMap<String, String>();
+        uidForEachTag = new HashMap<>();
         for (Node tags_title : tagsList) {
             if (tagsList.size() > 0) {
                 uidForEachTag.put(tags_title.getText(), Entry.generateRandomUid());
@@ -88,7 +105,7 @@ public class Main {
         }
 
         //generating unique id for every location and mapping it.
-        uidForLocations = new HashMap<String, String>();
+        uidForLocations = new HashMap<>();
         for (Node location : notesList) {
             if (location.selectSingleNode(LATITUDE) != null && location.selectSingleNode(LONGITUDE) != null) {
                 uidForLocations.put(Entry.addLocation(location.selectSingleNode(LATITUDE).getText(), location.selectSingleNode(LONGITUDE).getText()), Entry.generateRandomUid());
@@ -100,7 +117,7 @@ public class Main {
      * create xml document
      * @return xml Document for Diaro
      */
-    public static Document createXMLDocument() {
+    private static Document createXMLDocument() {
 
         getNodes(enexDocument);
 
@@ -119,6 +136,7 @@ public class Main {
 
         //adding entries table
         generateEntriesTable(root);
+        System.out.println("entries"+ entries_uid.toString());
 
         //adding attachments table
         generateAttachmentsTable(root);
@@ -133,7 +151,7 @@ public class Main {
      * @param root Root element of the document
      *
      */
-    public static void generateFolderTable(@NotNull Element root) {
+    private static void generateFolderTable(@NotNull Element root) {
 
         Element folderRoot = root.addElement("table").addAttribute("title", diaro_folders);
 
@@ -148,6 +166,7 @@ public class Main {
     }
 
     /**
+     *
      * this method generates Tags table for Diaro
      *
      * this methods uses two hashMaps to save tags, tagsForEachEntry stores the list of tag uid's as map for each entry
@@ -160,8 +179,8 @@ public class Main {
      * @param root Root element of the document
      */
 
-    public static void generateTagTable(@NotNull Element root) {
-        tagsForEachEntry = new HashMap<Integer, List<String>>();
+    private static void generateTagTable(@NotNull Element root) {
+        tagsForEachEntry = new HashMap<>();
 
         Element folderRoot = generateTableTag(TAG, diaro_tags,root);
 
@@ -170,10 +189,10 @@ public class Main {
             if (node.selectSingleNode(TAG) != null) {
 
                 //using KeyCounter as key to store all the tags of an Entry inside HashMap(key: counter, value: {tags_text})
-                tags_text = new ArrayList<String>();
+                tags_text = new ArrayList<>();
                 List<Node> evernote_tags = node.selectNodes(TAG);
-                Element row =  folderRoot.addElement("r");
-
+                assert folderRoot != null;
+                Element row = folderRoot.addElement("r");
                 //using uidForTag to get the uid for already mapped and stored list of tags.
                 for (Node tag_node : evernote_tags) {
                     row.addElement(Entry.KEY_UID).addText(uidForEachTag.get(tag_node.getText()));
@@ -196,7 +215,7 @@ public class Main {
      * @param root Root element of the document
      */
 
-    public static void generateLocationTable(@NotNull Element root) {
+    private static void generateLocationTable(@NotNull Element root) {
         Element folderRoot = generateTableTag(LATITUDE, diaro_locations,root);
 
         for (Node node : notesList) {
@@ -206,8 +225,8 @@ public class Main {
                     String latitude = node.selectSingleNode(LATITUDE).getText();
                     String longitude = node.selectSingleNode(LONGITUDE).getText();
 
-                    Element row =  folderRoot.addElement("r");;
-
+                    assert folderRoot != null;
+                    Element row = folderRoot.addElement("r");
                     row.addElement(Entry.KEY_UID).addText(uidForLocations.get(Entry.addLocation(latitude, longitude)));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(Entry.addLocation(latitude, longitude));
                     row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(DEFAULT_ZOOM);
@@ -223,11 +242,11 @@ public class Main {
      * ## used <title></title>,<content></content>
      * @param root Root element of the document
      */
-    public static void generateEntriesTable(@NotNull Element root) {
+    private static void generateEntriesTable(@NotNull Element root) {
         //resetting the keyCounter to loop through the map for tags
         keyCounter = 0;
         Element folderRoot = root.addElement("table").addAttribute("title", diaro_entries);
-        entries_uid = new ArrayList<String>();
+        entries_uid = new ArrayList<>();
 
         for (Node node : notesList) {
 
@@ -236,15 +255,18 @@ public class Main {
                 Element row =  folderRoot.addElement("r");
 
                 String uid = Entry.generateRandomUid();
-                //adding the uid's inside a list to display in attachments table
-                entries_uid.add(uid);
-
                 row.addElement(Entry.KEY_UID).addText(uid);
 
                 if (node.selectSingleNode(TITLE) != null) {
                     String title = node.selectSingleNode(TITLE).getText();
                     row.addElement(Entry.KEY_ENTRY_TITLE).addText(title);
                 }
+
+                if(node.selectSingleNode(RESOURCE) != null){
+                    //adding the uid's inside a list to display in attachments table
+                    entries_uid.add(uid);
+                }
+
                 if (node.selectSingleNode(CONTENT) != null) {
                     String text = node.selectSingleNode(CONTENT).getText();
                     // using Jsoup to parse HTML inside Content
@@ -289,36 +311,48 @@ public class Main {
      * ## required tags missing from evernote -- <position></position><type></type>
      * ## included in Evernote  <data></data><mime></mime><width></width><height></height><file-name></file-name>
      * ## used <data></data><mime></mime> <file-name></file-name>
-     * (<data></data>) is used to generate the image file in createZipFile() and is not displayed in the table
+     * (<data></data>) is used to generate the image file in createZipOrXmlFile() and is not displayed in the table
      * @param root Root element of the document
      */
-    public static void generateAttachmentsTable(@NotNull Element root){
+    private static void generateAttachmentsTable(@NotNull Element root){
         //resetting the keyCounter to loop through the uid's for entries
         keyCounter = 0;
 
         Element folderRoot = generateTableTag(RESOURCE, diaro_attachments,root);
-
+        String mime = "";
+        String fileName = "";
         for (Node node : notesList) {
 
             if (node.selectSingleNode(RESOURCE) != null) {
-
+                //get the attachments and entry_uid for each note
                 List<Node> attachments = node.selectNodes(RESOURCE);
-
+                String entry_uid = entries_uid.get(keyCounter);
 
                 for (Node attachment : attachments) {
-                    String mime = attachment.selectSingleNode(MIME).getText();
-                    String fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
+                    try {
+                        mime = attachment.selectSingleNode(MIME).getText();
+                        fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
+                    }catch( NullPointerException e){
+                        e.printStackTrace();
+                    }
 
                     if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                        assert folderRoot != null;
                         Element row =  folderRoot.addElement("r");
                         row.addElement(Entry.KEY_UID).addText(Entry.generateRandomUid());
-                        row.addElement(Entry.KEY_ENTRY_UID).addText(entries_uid.get(keyCounter));
+                        try {
+                            row.addElement(Entry.KEY_ENTRY_UID).addText(entry_uid);
+                        }catch (IndexOutOfBoundsException e){
+                            e.printStackTrace();
+                        }
                         row.addElement("type").addText("photo");
                         row.addElement("filename").addText(fileName);
-                        //could ot find position in enex
+                        //could not find <position> in enex
                     }
-                    keyCounter++;
+                    //if there is only one entry or
+                    // the attachments are in the same previous entry the counter will not increment
                 }
+                keyCounter++;
             }
         }
 
@@ -333,7 +367,7 @@ public class Main {
      * @param root Root element of the document
      * @return <table title="s2"></table>
      */
-    public static Element generateTableTag(String s1, String s2 , Element root){
+    private static Element generateTableTag(String s1, String s2, Element root){
         for (Node node : notesList) {
 
             if(node.selectSingleNode(s1) != null){
@@ -349,50 +383,82 @@ public class Main {
      * @param enexDocument input Evernote xml Document
      * @param createdDocument generated xml document for diaro
      */
-    public static void createZipFile(Document enexDocument , Document createdDocument) {
+    private static void createZipOrXmlFile(Document enexDocument, Document createdDocument) {
         File zipFile = new File(OUPTPUT_ZIP_PATH);
-        ZipOutputStream out = null;
+        ZipOutputStream zipOutputStream = null;
+        String mime = "";
+        String fileName = "";
+        String baseEncoding = "";
 
         try {
-            out = new ZipOutputStream(new FileOutputStream(zipFile));
+            zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        //get all the <resources> in a list
         List<Node> data_nodes = enexDocument.selectNodes("/en-export/note/resource");
 
         byte[] decoded;
-
-        for(Node attachment : data_nodes) {
-            String baseEncoding = attachment.selectSingleNode(DATA).getText();
-            String fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
-            String mime = attachment.selectSingleNode(MIME).getText();
-            if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+        // if the list is not empty proceed to make zip file
+        if (data_nodes.size() != 0) {
+            for (Node attachment : data_nodes) {
+                //fetch the required string
                 try {
-                    decoded = Base64.getMimeDecoder().decode(baseEncoding);
-                    ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
-                    out.putNextEntry(imageOutputStream);
-                    out.write(decoded);
-
-                } catch (IllegalArgumentException | IOException e) {
+                    baseEncoding = attachment.selectSingleNode(DATA).getText();
+                    fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
+                    mime = attachment.selectSingleNode(MIME).getText();
+                }catch (NullPointerException e){
                     e.printStackTrace();
                 }
+                //check supported format
+                if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                    try {
+                        //decode base64 encoding
+                        //create a new zip entry
+                        //add the zip entry and  write the decoded data
+                        assert zipOutputStream != null;
+                        decoded = Base64.getMimeDecoder().decode(baseEncoding);
+                        ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
+                        zipOutputStream.putNextEntry(imageOutputStream);
+                        zipOutputStream.write(decoded);
+                    } catch (IllegalArgumentException | IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+            //add the xml after the attachments have been added
+            ZipEntry xmlOutputStream = new ZipEntry("test.xml");
+            try {
+                assert zipOutputStream != null;
+                zipOutputStream.putNextEntry(xmlOutputStream);
+                zipOutputStream.write(toBytes(createdDocument));
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                zipOutputStream.closeEntry();
+            } catch (IOException e) {
+                e.printStackTrace();
 
-        ZipEntry xmlOutputStream = new ZipEntry("test.xml");
-        try {
-            out.putNextEntry(xmlOutputStream);
-            out.write(toBytes(createdDocument));
-            out.finish();
-            out.flush();
-            out.closeEntry();
-        } catch (IOException e) {
-            e.printStackTrace();
+            }
 
+        } else {
+            //if no attachments found
+            // add the xml file only
+            OutputFormat format = OutputFormat.createPrettyPrint();
+            try {
+               OutputStream outputStream = new FileOutputStream(OUPTPUT_XML_PATH);
+               XMLWriter writer = new XMLWriter(outputStream, format);
+                writer.write(createdDocument);
+            } catch (IOException e ) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public static byte[] toBytes(Document document) {
+    /**
+     * @param document xml document
+     * @return byte[] for zipOutputStream
+     */
+    private static byte[] toBytes(Document document) {
         String text = document.asXML();
         return text.getBytes();
     }
