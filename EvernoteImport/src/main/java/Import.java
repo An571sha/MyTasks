@@ -1,4 +1,3 @@
-import org.apache.commons.lang3.ObjectUtils;
 import org.dom4j.*;
 
 import org.dom4j.io.OutputFormat;
@@ -13,6 +12,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 
 /**
  *
@@ -32,7 +32,7 @@ public class Import {
     private static String diaro_tags = "diaro_tags";
     private static String diaro_locations = "diaro_locations";
     private static String DEFAULT_ZOOM = "11";
-    private static String TIMEZONE_OFFSET = "00:00";
+    private static String TIMEZONE_OFFSET = "+00:00";
 
     private static String FOLDER_UID = Entry.generateRandomUid();
     private static String FOLDER_TITLE = "Evernote";
@@ -54,6 +54,7 @@ public class Import {
     private static HashMap<Integer, List<String>> tagsForEachEntry;
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForLocations;
+    private static  Map<String,String> entry_uid_primary_photo_uid;
 
     private static List<String> entries_uid;
     private static List<String> tags_text;
@@ -247,46 +248,17 @@ public class Import {
         keyCounter = 0;
         Element folderRoot = root.addElement("table").addAttribute("title", diaro_entries);
         entries_uid = new ArrayList<>();
+        entry_uid_primary_photo_uid = new HashMap<>();
+        String primary_photo_uid;
 
         for (Node node : notesList) {
 
             if (node != null) {
 
-                Element row =  folderRoot.addElement("r");
+                Element entriesRow =  folderRoot.addElement("r");
 
                 String uid = Entry.generateRandomUid();
-                row.addElement(Entry.KEY_UID).addText(uid);
-
-                if (node.selectSingleNode(TITLE) != null) {
-                    String title = node.selectSingleNode(TITLE).getText();
-                    row.addElement(Entry.KEY_ENTRY_TITLE).addText(title);
-                }
-
-                if(node.selectSingleNode(RESOURCE) != null){
-                    //adding the uid's inside a list to display in attachments table
-                    entries_uid.add(uid);
-                }
-
-                if (node.selectSingleNode(CONTENT) != null) {
-                    String text = node.selectSingleNode(CONTENT).getText();
-                    // using Jsoup to parse HTML inside Content
-                    String parsedHtml = Jsoup.parse(text).text();
-                    row.addElement(Entry.KEY_ENTRY_TEXT).addText(parsedHtml);
-                }
-
-                if (node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
-                    //adding the location uid using uidForLocations Map
-                    String location_uid = uidForLocations.get(Entry.addLocation(node.selectSingleNode(LATITUDE).getText(), node.selectSingleNode(LONGITUDE).getText()));
-                    row.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(location_uid);
-                }
-
-                if (node.selectSingleNode(TAG) != null) {
-                    //using key counter to select the tag uid from tagForEachEntry List
-                    List<String> tags = tagsForEachEntry.get(keyCounter);
-                    //appending the tags for each entry in a string with ,
-                    row.addElement(Entry.KEY_ENTRY_TAGS).addText("," + String.join(",",tags)+ ",");
-                    keyCounter++;
-                }
+                entriesRow.addElement(Entry.KEY_UID).addText(uid);
 
                 if (node.selectSingleNode(CREATED) != null) {
                     //only date is being is being formatted here
@@ -295,12 +267,51 @@ public class Import {
                     String day = date.substring(6, 8);
                     String year = date.substring(2, 4);
                     String formattedDate = String.format("%s/%s/%s", month, day, year);
-                    row.addElement(Entry.KEY_ENTRY_DATE).addText(String.valueOf(Entry.dateToTimeStamp(formattedDate)));
+                    entriesRow.addElement(Entry.KEY_ENTRY_DATE).addText(String.valueOf(Entry.dateToTimeStamp(formattedDate)));
                 }
 
-                row.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
-                //no <tz_offset> found in evernote
-                row.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(TIMEZONE_OFFSET);
+                if (node.selectSingleNode(TITLE) != null) {
+                    String title = node.selectSingleNode(TITLE).getText();
+                    entriesRow.addElement(Entry.KEY_ENTRY_TITLE).addText(title);
+                }
+
+
+                if (node.selectSingleNode(CONTENT) != null) {
+                    String text = node.selectSingleNode(CONTENT).getText();
+                    // using Jsoup to parse HTML inside Content
+                    String parsedHtml = Jsoup.parse(text).text();
+                    entriesRow.addElement(Entry.KEY_ENTRY_TEXT).addText(parsedHtml);
+                }
+
+                if (node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
+                    //adding the location uid using uidForLocations Map
+                    String location_uid = uidForLocations.get(Entry.addLocation(node.selectSingleNode(LATITUDE).getText(), node.selectSingleNode(LONGITUDE).getText()));
+                    entriesRow.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(location_uid);
+                }
+
+                if (node.selectSingleNode(TAG) != null) {
+                    //using key counter to select the tag uid from tagForEachEntry List
+                    List<String> tags = tagsForEachEntry.get(keyCounter);
+                    //appending the tags for each entry in a string with ,
+                    entriesRow.addElement(Entry.KEY_ENTRY_TAGS).addText("," + String.join(",",tags)+ ",");
+                    keyCounter++;
+                }
+
+                if(node.selectSingleNode(RESOURCE) != null){
+                    //adding the uid's inside a list to display in attachments table
+                    entries_uid.add(uid);
+                    String mime = node.selectSingleNode("resource/mime").getText();
+                    if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                        //generating a primary_photo_uid for every entry_uid if resource present
+                        primary_photo_uid = Entry.generateRandomUid();
+                        entry_uid_primary_photo_uid.put(uid, primary_photo_uid);
+                        entriesRow.addElement("primary_photo_uid").addText(primary_photo_uid);
+                    }
+                }
+
+                entriesRow.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
+                //no <tz_offset> found in evernote so it is set as +00:00
+                entriesRow.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(TIMEZONE_OFFSET);
 
             }
         }
@@ -321,14 +332,17 @@ public class Import {
         Element folderRoot = generateTableTag(RESOURCE, diaro_attachments,root);
         String mime = "";
         String fileName = "";
-        for (Node node : notesList) {
+        String attachment_uid;
 
+        for (Node node : notesList) {
+            int uidGeneratorCounter = 0;
             if (node.selectSingleNode(RESOURCE) != null) {
                 //get the attachments and entry_uid for each note
                 List<Node> attachments = node.selectNodes(RESOURCE);
                 String entry_uid = entries_uid.get(keyCounter);
 
                 for (Node attachment : attachments) {
+
                     try {
                         mime = attachment.selectSingleNode(MIME).getText();
                         fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
@@ -339,7 +353,19 @@ public class Import {
                     if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
                         assert folderRoot != null;
                         Element row =  folderRoot.addElement("r");
-                        row.addElement(Entry.KEY_UID).addText(Entry.generateRandomUid());
+                        //if multiple attachments found
+                        //add the photo uid to the first(primary) one and
+                        //generate random uid for rest
+                        if(uidGeneratorCounter == 0){
+                            row.addElement(Entry.KEY_UID).addText(entry_uid_primary_photo_uid.get(entry_uid));
+                        }else{
+                            //if only on attachment found fetch
+                            //photo_uid for the entry and use as
+                            //attachment uid
+                            attachment_uid = Entry.generateRandomUid();
+                            row.addElement(Entry.KEY_UID).addText(attachment_uid);
+
+                        }
                         try {
                             row.addElement(Entry.KEY_ENTRY_UID).addText(entry_uid);
                         }catch (IndexOutOfBoundsException e){
@@ -349,9 +375,10 @@ public class Import {
                         row.addElement("filename").addText(fileName);
                         //could not find <position> in enex
                     }
-                    //if there is only one entry or
-                    // the attachments are in the same previous entry the counter will not increment
+                    //using the uid generator to get the primary_photo_uid
+                    uidGeneratorCounter++;
                 }
+                //using the keyCounter to get entry_uid
                 keyCounter++;
             }
         }
@@ -359,7 +386,7 @@ public class Import {
     }
 
     /**
-     * this methods generates table tag for each xml elements in xml. <table></table> tag is only generated when the
+     * this methods generates table tag for each xml elements in xml. <table></table> is only generated when the
      * equivalent node exists in the nodesList
 
      * @param s1 Name of the node inside enex document
@@ -400,7 +427,7 @@ public class Import {
 
         byte[] decoded;
         // if the list is not empty proceed to make zip file
-        if (data_nodes.size() != 0) {
+        if (data_nodes.size() > 0) {
             for (Node attachment : data_nodes) {
                 //fetch the required string
                 try {
