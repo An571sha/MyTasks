@@ -1,3 +1,4 @@
+import org.apache.commons.io.FilenameUtils;
 import org.dom4j.*;
 
 import org.dom4j.io.OutputFormat;
@@ -42,7 +43,7 @@ public class Import {
     private static String TAGS = "/en-export/note/tag";
     private static String LATITUDE = "note-attributes/latitude";
     private static String LONGITUDE = "note-attributes/longitude";
-    private static String RESOURCE_ATTRIBUTE_FILENAME = "resource-attributes/file-name";
+    private static String RESOURCE_ATTRIBUTE_FILENAME = "/en-export/note/resource/resource-attributes/file-name";
     private static String DATA = "data";
     private static String MIME = "mime";
     private static String RESOURCE = "resource";
@@ -54,12 +55,14 @@ public class Import {
     private static HashMap<Integer, List<String>> tagsForEachEntry;
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForLocations;
-    private static  Map<String,String> entry_uid_primary_photo_uid;
+    private static HashMap<String,String> entry_uid_primary_photo_uid;
 
     private static List<String> entries_uid;
     private static List<String> tags_text;
+    private static List<String> fileNameList;
     private static List<Node> tagsList;
     private static List<Node> notesList;
+
 
     private static int keyCounter = 0;
 
@@ -137,7 +140,6 @@ public class Import {
 
         //adding entries table
         generateEntriesTable(root);
-        System.out.println("entries"+ entries_uid.toString());
 
         //adding attachments table
         generateAttachmentsTable(root);
@@ -301,7 +303,7 @@ public class Import {
                     //adding the uid's inside a list to display in attachments table
                     entries_uid.add(uid);
                     String mime = node.selectSingleNode("resource/mime").getText();
-                    if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                    if (assertMime(mime)) {
                         //generating a primary_photo_uid for every entry_uid if resource present
                         primary_photo_uid = Entry.generateRandomUid();
                         entry_uid_primary_photo_uid.put(uid, primary_photo_uid);
@@ -333,9 +335,16 @@ public class Import {
         String mime = "";
         String fileName = "";
         String attachment_uid;
+        int fileNameCounter = 0;
+
+        //find and rename duplicate filename in resources
+        fileNameList = new ArrayList<>();
+        findAndRenameDuplicateEntries(fileNameList);
 
         for (Node node : notesList) {
             int uidGeneratorCounter = 0;
+
+
             if (node.selectSingleNode(RESOURCE) != null) {
                 //get the attachments and entry_uid for each note
                 List<Node> attachments = node.selectNodes(RESOURCE);
@@ -345,23 +354,27 @@ public class Import {
 
                     try {
                         mime = attachment.selectSingleNode(MIME).getText();
-                        fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
+                        fileName = fileNameList.get(fileNameCounter);
+                        fileNameCounter++;
+
                     }catch( NullPointerException e){
                         e.printStackTrace();
                     }
 
-                    if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                    if (assertMime(mime)) {
                         assert folderRoot != null;
+                        //if attachment is compatible add the name in list
+
                         Element row =  folderRoot.addElement("r");
                         //if multiple attachments found
-                        //add the photo uid to the first(primary) one and
-                        //generate random uid for rest
+                        //add the generated photo_uid (line308) to the first(primary) attachment
+                        //in attachments.
                         if(uidGeneratorCounter == 0){
                             row.addElement(Entry.KEY_UID).addText(entry_uid_primary_photo_uid.get(entry_uid));
+
+                            //Generate random uid for rest
                         }else{
-                            //if only on attachment found fetch
-                            //photo_uid for the entry and use as
-                            //attachment uid
+
                             attachment_uid = Entry.generateRandomUid();
                             row.addElement(Entry.KEY_UID).addText(attachment_uid);
 
@@ -372,17 +385,17 @@ public class Import {
                             e.printStackTrace();
                         }
                         row.addElement("type").addText("photo");
-                        row.addElement("filename").addText(fileName);
+                        row.addElement(Entry.KEY_ENTRY_FILENAME).addText(fileName);
                         //could not find <position> in enex
+                        //incrementing the uid generator to get the next primary_photo_uid, if present
+                        uidGeneratorCounter++;
                     }
-                    //using the uid generator to get the primary_photo_uid
-                    uidGeneratorCounter++;
+
                 }
                 //using the keyCounter to get entry_uid
                 keyCounter++;
             }
         }
-
     }
 
     /**
@@ -416,6 +429,7 @@ public class Import {
         String mime = "";
         String fileName = "";
         String baseEncoding = "";
+        int counter = 0;
 
         try {
             zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -432,13 +446,14 @@ public class Import {
                 //fetch the required string
                 try {
                     baseEncoding = attachment.selectSingleNode(DATA).getText();
-                    fileName = attachment.selectSingleNode(RESOURCE_ATTRIBUTE_FILENAME).getText();
+                    fileName = fileNameList.get(counter);
                     mime = attachment.selectSingleNode(MIME).getText();
+                    counter++;
                 }catch (NullPointerException e){
                     e.printStackTrace();
                 }
                 //check supported format
-                if (mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png")) {
+                if (assertMime(mime)) {
                     try {
                         //decode base64 encoding
                         //create a new zip entry
@@ -489,4 +504,33 @@ public class Import {
         String text = document.asXML();
         return text.getBytes();
     }
+
+    /**
+     * @param mime resource type
+     * @return true if resource type is compatible with Diaro
+     */
+    private static boolean assertMime(String mime){
+        return mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png");
+    }
+
+    private static void findAndRenameDuplicateEntries(List<String> namesList) {
+        String replacingString;
+        List<Node> filenames = enexDocument.selectNodes(RESOURCE_ATTRIBUTE_FILENAME);
+        for(Node filename: filenames){
+            namesList.add(filename.getText());
+        }
+
+        for (int i = 0; i < namesList.size(); i++) {
+            for (int j = i + 1; j < namesList.size(); j++) {
+                if (namesList.get(i).equals(namesList.get(j))) {
+                    String fileNameString = namesList.get(j);
+                    String extension = FilenameUtils.getExtension(fileNameString);
+                    String newString = Entry.generateRandomUid() + "." + extension;
+                    replacingString = namesList.get(j).replace( namesList.get(j),newString);
+                    namesList.set(i,replacingString);
+                }
+            }
+        }
+    }
+
 }
