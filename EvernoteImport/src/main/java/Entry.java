@@ -26,6 +26,7 @@ public class Entry {
     public final static String KEY_ENTRY_TAGS = "tags";
     public final static String KEY_ENTRY_TAGS_TITLE = "title";
     public final static String KEY_ENTRY_PRIMARY_PHOTO_UID = "primary_photo_uid";
+    public final static String KEY_ENTRY_FILENAME = "filename";
 
     public static String dateFormatNormal = "dd/MM/yyyy";
     public static String dateFormatUS = "MM/dd/yy";
@@ -47,12 +48,12 @@ public class Entry {
 
         this.uid = generateRandomUid();
         this.date = String.valueOf(dateToTimeStamp(date));
-        this.tz_offset = "-05:00";
-        this.title = "";
+        this.tz_offset = ":00";
+        this.title = title;
         this.text = text;
-        this.folder_uid = "";
-        this.location_uid = "";
-        this.tags = "";
+        this.folder_uid = folder_uid;
+        this.location_uid = location_uid;
+        this.tags = tags;
         this.primary_photo_uid = "";
 
     }
@@ -95,7 +96,7 @@ public class Entry {
     }
 
     /**
-     * Returns md5 hash of given string
+     * @Returns md5 hash of given string
      */
     public static String md5(String string) {
         MessageDigest digest;
