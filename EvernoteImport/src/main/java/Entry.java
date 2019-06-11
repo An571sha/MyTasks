@@ -48,7 +48,7 @@ public class Entry {
 
         this.uid = generateRandomUid();
         this.date = String.valueOf(dateToTimeStamp(date));
-        this.tz_offset = ":00";
+        this.tz_offset = "+00:00";
         this.title = title;
         this.text = text;
         this.folder_uid = folder_uid;

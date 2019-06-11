@@ -1,22 +1,26 @@
 import org.apache.commons.io.FilenameUtils;
 import org.dom4j.*;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 import org.jsoup.Jsoup;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.sql.Timestamp;
+import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class NewImport {
     private static Document enexDocument;
     private static Document xmlDocument;
+
+    //input and output paths
     private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip";
-    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.xml";
+    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\DiaroBackup.xml";
 
+    //evernote enex nodes
     private static String NOTES = "/en-export/note";
     private static String LATITUDE = "note-attributes/latitude";
     private static String LONGITUDE = "note-attributes/longitude";
@@ -29,6 +33,7 @@ public class NewImport {
     private static String DATA = "data";
     private static String TAGS = "/en-export/note/tag";
 
+    //xml table names
     private static String diaro_folders = "diaro_folders";
     private static String diaro_entries = "diaro_entries";
     private static String diaro_attachments = "diaro_attachments";
@@ -37,19 +42,20 @@ public class NewImport {
 
     private static String DEFAULT_ZOOM = "11";
 
+    //lists
     private static Set<String> fileNameSet;
-    private static List<String> fileNameList;
     private static List<Node> allTagsList;
     private static List<Node> nodeList;
     private static List<Entry> entriesList;
     private static List<Tags> tagsList;
+    private static List<Tags> tagsForEntryList;
     private static List<Location> locationsList;
     private static List<Folder> foldersList;
     private static List<Attachment> attachmentList;
 
     private static HashMap<String, String> uidForEachTag;
-    private static HashMap<String, List<Tags>> tagsForEachEntry; //use this for generating row, not the list
 
+    //evernote folder
     private static String FOLDER_UID = Entry.generateRandomUid();
     private static String FOLDER_TITLE = "Evernote";
     private static String FOLDER_COLOR = "#F0B913";
@@ -58,48 +64,54 @@ public class NewImport {
 
     public static void main(String[] args) throws DocumentException {
         File inputFile = new File(ENEX_DOCUMENT_PATH);
-        enexDocument =  parse(inputFile);
+        enexDocument =  parseXml(inputFile);
         collectVariables(enexDocument);
         xmlDocument = generateXml();
-        int i = 0;
+        createZipOrXmlFile(xmlDocument);
     }
 
-    private static Document parse(File file) throws DocumentException {
+    private static Document parseXml(File file) throws DocumentException {
         SAXReader reader = new SAXReader();
-        Document document = reader.read(file);
-        return document;
+        return reader.read(file);
     }
 
 
-    /** this method collects all the nodes and variables, and add them in the corresponding list
+    /** this method collects all the nodes and variables, and adds them in the corresponding
+     * Object list.
      *
      * @param document enex document
      */
     private static void collectVariables(Document document){
         //collecting all the nodes inside a list
         nodeList = document.selectNodes(NOTES);
+
+        //initialising the lists
         foldersList = new ArrayList<>();
         tagsList = new ArrayList<>();
         entriesList = new ArrayList<>();
         locationsList = new ArrayList<>();
         attachmentList = new ArrayList<>();
-        fileNameList = new ArrayList<>();
+        tagsForEntryList = new ArrayList<>();
 
+        //hashSet for handling the duplicate fileNames
         fileNameSet = new LinkedHashSet<>();
+
+        //hashMap for Storing the uid for each tag
         uidForEachTag = new LinkedHashMap<>();
-        tagsForEachEntry = new LinkedHashMap<>();
 
         String title = "";
         String parsedHtml = "";
         String formattedDate = "";
-        String tags_uid = "";
         String location_uid = "";
         String mime = "";
         String fileName = "";
         String attachment_uid = null;
         String entry_uid = "";
         String type = "photo";
-        String baseEncoding = "";
+        String baseEncoding;
+
+        String tag_uid = "";
+
         Tags tags;
         Location location;
         Entry entry;
@@ -120,16 +132,17 @@ public class NewImport {
         for(Node node : nodeList){
 
             foldersList.add((new Folder(FOLDER_TITLE,FOLDER_COLOR,FOLDER_UID)));
-            //get all tags
+            //get all tags including duplicates
             if( node.selectSingleNode(TAG) !=null) {
                 List<Node> evernote_tags = node.selectNodes(TAG);
                 for (Node evenote_tag : evernote_tags) {
                     tags = new Tags(evenote_tag.getText(), uidForEachTag.get(evenote_tag.getText()));
-                    tagsList.add(tags);
+                    tagsForEntryList.add(tags);
                 }
             }
 
             //get all Locations
+            // using Entry.addLocation to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
                 String latitude = node.selectSingleNode(LATITUDE).getText();
                 String longitude = node.selectSingleNode(LONGITUDE).getText();
@@ -143,7 +156,7 @@ public class NewImport {
             }
             if(node.selectSingleNode(CONTENT) != null ){
                 String text = node.selectSingleNode(CONTENT).getText();
-                // using Jsoup to parse HTML inside Content
+                // using Jsoup to parseXml HTML inside Content
                 parsedHtml = Jsoup.parse(text).text();
             }
             if(node.selectSingleNode(CREATED) != null){
@@ -154,21 +167,26 @@ public class NewImport {
                 formattedDate = String.format("%s/%s/%s", month, day, year);
             }
             //get all the tags
-            if(tagsList.size() != 0){
-                for(Tags tag : tagsList) {
-                    tags_uid += String.join(",", tag.tagsId)+ ",";
+            //append all the string stringBuilder
+            if(tagsForEntryList.size() != 0){
+                for(Tags tag : tagsForEntryList) {
+                  tag_uid = tag_uid + (",") + (String.join(",", tag.tagsId));
                 }
-                tags_uid = "";
-                System.out.println(tagsList);
+                tag_uid = tag_uid + (",");
+                System.out.println(tag_uid);
+
             }
             //get all location
             if(locationsList.size()!=0){
                 Location location_name = locationsList.get(locationCounter);
                 location_uid = location_name.location_uid;
             }
-            entry = new Entry(formattedDate,parsedHtml,title,FOLDER_UID,location_uid,tags_uid);
-            //put the tags in a map with id as key
-            tagsForEachEntry.put(entry.uid,tagsList);
+            entry = new Entry(formattedDate,parsedHtml,title,FOLDER_UID,location_uid,tag_uid);
+            //clear the list
+            //clear the tag_uid variable for next loop
+            tagsForEntryList.clear();
+            tag_uid = "";
+           //add entry in the list
             entriesList.add(entry);
             locationCounter++;
 
@@ -198,7 +216,7 @@ public class NewImport {
                             e.printStackTrace();
                         }
                         // check if the fileName already exists
-                        // if yes generate a new fileName to prevent duplicates
+                        // if true generate a new fileName to prevent duplicates
                         if(fileNameSet.add(fileName)){
                             fileNameSet.add(fileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,fileName,decoded);
@@ -235,8 +253,8 @@ public class NewImport {
      */
     private static String setNewFileName(String fileNameString) {
         String extension = FilenameUtils.getExtension(fileNameString);
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        return timestamp + "." + extension;
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
+        return timeStamp + "." + extension;
     }
 
     /** this file creates a new xml document by looping through all the lists of Datatypes and
@@ -249,6 +267,8 @@ public class NewImport {
         Element root = createdXmlDocument.addElement("data").addAttribute("version", "2");
 
         //adding folders table
+        // this loop generates folder table. All the folders have a constant
+        // uid, title and colour. As evernote does not provide any data regarding folders.
         Element folderRoot = root.addElement("table").addAttribute("title", diaro_folders);
         for(Folder folder: foldersList){
             Element row =  folderRoot.addElement("r");
@@ -260,11 +280,11 @@ public class NewImport {
 
         //adding tags table
         Element tagRoot = generateTableTag(TAG, diaro_tags,root);
-        for(Tags tag: tagsList){
+        for(Map.Entry<String,String> entry : uidForEachTag.entrySet() ){
 
             Element row = tagRoot.addElement("r");
-            row.addElement(Entry.KEY_UID).addText(tag.tagsId);
-            row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(tag.title);
+            row.addElement(Entry.KEY_UID).addText(entry.getValue());
+            row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(entry.getKey());
         }
 
         //adding locations table
@@ -281,6 +301,7 @@ public class NewImport {
         for(Entry entry: entriesList){
 
             Element entriesRow = entryRoot.addElement("r");
+            entriesRow.addElement(Entry.KEY_UID).addText(entry.uid);
             entriesRow.addElement(Entry.KEY_ENTRY_DATE).addText(entry.date);
             entriesRow.addElement(Entry.KEY_ENTRY_TITLE).addText(entry.title);
             entriesRow.addElement(Entry.KEY_ENTRY_TEXT).addText(entry.text);
@@ -316,9 +337,7 @@ public class NewImport {
      */
     private static Element generateTableTag(String s1, String s2, Element root){
         for (Node node : nodeList) {
-
             if(node.selectSingleNode(s1) != null){
-
                 return root.addElement("table").addAttribute("title", s2);
             }
         }
@@ -327,16 +346,13 @@ public class NewImport {
 
     /**
      * this method creates a zip file for the given xml document and saves the images in media/photos
-     * @param enexDocument input Evernote xml Document
      * @param createdDocument generated xml document for diaro
      */
-    private static void createZipOrXmlFile(Document enexDocument, Document createdDocument) {
+    private static void createZipOrXmlFile(Document createdDocument) {
         File zipFile = new File(OUPTPUT_ZIP_PATH);
         ZipOutputStream zipOutputStream = null;
-        String mime = "";
-        String fileName = "";
-        String baseEncoding = "";
-        int counter = 0;
+        String fileName;
+        byte[] decoded;
 
         try {
             zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -345,7 +361,46 @@ public class NewImport {
         }
 
         if(attachmentList.size() > 0){
-            
+            for (Attachment attachment : attachmentList) {
+                try {
+                    //create a new zip entry
+                    //add the zip entry and  write the decoded data
+                    assert zipOutputStream != null;
+                    fileName = attachment.filename;
+                    decoded = attachment.data;
+                    ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
+                    zipOutputStream.putNextEntry(imageOutputStream);
+                    zipOutputStream.write(decoded);
+
+                } catch (IllegalArgumentException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            //add the xml after the attachments have been added
+            ZipEntry xmlOutputStream = new ZipEntry("DiaroBackup.xml");
+            try {
+                zipOutputStream.putNextEntry(xmlOutputStream);
+                zipOutputStream.write(toBytes(createdDocument));
+                //closing the stream
+                //! not closing the stream can result in malformed zip files
+                zipOutputStream.finish();
+                zipOutputStream.flush();
+                zipOutputStream.closeEntry();
+            } catch (IOException e) {
+                e.printStackTrace();
+
+            }
+        }else{
+            //if no attachments found
+            // add the xml file only
+            OutputFormat format = OutputFormat.createPrettyPrint();
+            try {
+                OutputStream outputStream = new FileOutputStream(OUPTPUT_XML_PATH);
+                XMLWriter writer = new XMLWriter(outputStream, format);
+                writer.write(createdDocument);
+            } catch (IOException e ) {
+                e.printStackTrace();
+            }
         }
     }
 
