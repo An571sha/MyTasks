@@ -120,14 +120,7 @@ public class NewImport {
         int locationCounter = 0;
 
         byte[] decoded = null;
-        //generate unique id for every tag and map it.
-        allTagsList = document.selectNodes(TAGS);
         uidForEachTag = new HashMap<>();
-        for (Node tags_title : allTagsList) {
-            if (allTagsList.size() > 0) {
-                uidForEachTag.put(tags_title.getText(), Entry.generateRandomUid());
-            }
-        }
         //looping through the list
         for(Node node : nodeList){
 
@@ -136,6 +129,9 @@ public class NewImport {
             if( node.selectSingleNode(TAG) !=null) {
                 List<Node> evernote_tags = node.selectNodes(TAG);
                 for (Node evenote_tag : evernote_tags) {
+                    //generate unique id for the tag and map it.
+                    uidForEachTag.put(evenote_tag.getText(), Entry.generateRandomUid());
+                    //create new Tags Object
                     tags = new Tags(evenote_tag.getText(), uidForEachTag.get(evenote_tag.getText()));
                     tagsForEntryList.add(tags);
                 }
