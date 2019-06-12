@@ -1,3 +1,4 @@
+import diaro.*;
 import org.apache.commons.io.FilenameUtils;
 import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
@@ -75,7 +76,6 @@ public class NewImport {
         return reader.read(file);
     }
 
-
     /** this method collects all the nodes and variables, and adds them in the corresponding
      * Object list.
      *
@@ -98,7 +98,6 @@ public class NewImport {
 
         //hashMap for Storing the uid for each tag
         uidForEachTag = new LinkedHashMap<>();
-
         String title = "";
         String parsedHtml = "";
         String formattedDate = "";
@@ -120,7 +119,7 @@ public class NewImport {
         int locationCounter = 0;
 
         byte[] decoded = null;
-        uidForEachTag = new HashMap<>();
+
         //looping through the list
         for(Node node : nodeList){
 
@@ -131,14 +130,14 @@ public class NewImport {
                 for (Node evenote_tag : evernote_tags) {
                     //generate unique id for the tag and map it.
                     uidForEachTag.put(evenote_tag.getText(), Entry.generateRandomUid());
-                    //create new Tags Object
+                    //create new diaro.Tags Object
                     tags = new Tags(evenote_tag.getText(), uidForEachTag.get(evenote_tag.getText()));
                     tagsForEntryList.add(tags);
                 }
             }
 
             //get all Locations
-            // using Entry.addLocation to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
+            // using diaro.Entry.addLocation to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
                 String latitude = node.selectSingleNode(LATITUDE).getText();
                 String longitude = node.selectSingleNode(LONGITUDE).getText();
@@ -323,13 +322,13 @@ public class NewImport {
     }
 
     /**
-     * this methods generates table tag for each xml elements in xml. <table></table> is only generated when the
+     * this methods generates table tag for each xml elements in xml.This is only generated when the
      * equivalent node exists in the nodesList
 
      * @param s1 Name of the node inside enex document
      * @param s2 Name of the table title inside xml document
      * @param root Root element of the document
-     * @return <table title="s2"></table>
+     * @return table
      */
     private static Element generateTableTag(String s1, String s2, Element root){
         for (Node node : nodeList) {

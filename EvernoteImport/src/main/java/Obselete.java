@@ -1,3 +1,4 @@
+import diaro.Entry;
 import org.apache.commons.io.FilenameUtils;
 import org.dom4j.*;
 
@@ -119,7 +120,7 @@ public class Import {
 
     /**
      * create xml document
-     * @return xml Document for Diaro
+     * @return xml Document for diaro
      */
     private static Document createXMLDocument() {
 
@@ -170,10 +171,10 @@ public class Import {
 
     /**
      *
-     * this method generates Tags table for Diaro
+     * this method generates diaro.Tags table for diaro
      *
      * this methods uses two hashMaps to save tags, tagsForEachEntry stores the list of tag uid's as map for each entry
-     * and uses a keyCounter as key, where it increment every time it finds an Entry with tag.
+     * and uses a keyCounter as key, where it increment every time it finds an diaro.Entry with tag.
      * UidForEachTag is used to fetch uid for a given tag which has already been mapped in the method above.
      *
      * ## missing from Evernote -
@@ -191,7 +192,7 @@ public class Import {
 
             if (node.selectSingleNode(TAG) != null) {
 
-                //using KeyCounter as key to store all the tags of an Entry inside HashMap(key: counter, value: {tags_text})
+                //using KeyCounter as key to store all the tags of an diaro.Entry inside HashMap(key: counter, value: {tags_text})
                 tags_text = new ArrayList<>();
                 List<Node> evernote_tags = node.selectNodes(TAG);
                 assert folderRoot != null;
@@ -211,7 +212,7 @@ public class Import {
     }
 
     /**
-     * This method takes the Latitude and Longitude from the Evernote <note-attributes> and generates the Location table.
+     * This method takes the Latitude and Longitude from the Evernote <note-attributes> and generates the diaro.Location table.
      * ## Required tags missing from Evernote - <address></address>,<title></title>,<zoom></zoom>
      * ## Included in Evernote <Latitude></Latitude>,<Longitude></Longitude>,<altitude></altitude>
      * ## used  <Latitude></Latitude>,<Longitude></Longitude>
@@ -239,7 +240,7 @@ public class Import {
     }
 
     /**
-     * This method generates the Entries table for Diaro xml
+     * This method generates the Entries table for diaro xml
      * ## required tags missing from evernote <tz_offset></tz_offset>
      * ## included in Evernote <title></title>,<content></content>
      * ## used <title></title>,<content></content>
@@ -320,7 +321,7 @@ public class Import {
     }
 
     /**
-     * method generates the attachments table for Diaro xml
+     * method generates the attachments table for diaro xml
      * ## required tags missing from evernote -- <position></position><type></type>
      * ## included in Evernote  <data></data><mime></mime><width></width><height></height><file-name></file-name>
      * ## used <data></data><mime></mime> <file-name></file-name>
@@ -507,7 +508,7 @@ public class Import {
 
     /**
      * @param mime resource type
-     * @return true if resource type is compatible with Diaro
+     * @return true if resource type is compatible with diaro
      */
     private static boolean assertMime(String mime){
         return mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png");
