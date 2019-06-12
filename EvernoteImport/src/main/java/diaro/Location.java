@@ -1,3 +1,5 @@
+package diaro;
+
 public class Location {
     public String title;
     public String location_uid;

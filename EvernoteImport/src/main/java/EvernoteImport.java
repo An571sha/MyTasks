@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class NewImport {
+public class EvernoteImport {
     private static Document enexDocument;
     private static Document xmlDocument;
 

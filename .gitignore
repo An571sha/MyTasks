@@ -34,3 +34,16 @@ gradlew
 gradle.properties
 build.gradle
 WordPressAPIExplorer-master.zip
+EvernoteImport/target/classes/diaro/Tags.class
+EvernoteImport/target/classes/diaro/Location.class
+EvernoteImport/target/classes/diaro/Folder.class
+EvernoteImport/target/classes/diaro/Entry.class
+EvernoteImport/target/classes/diaro/Attachment.class
+EvernoteImport/target/classes/NewImport.class
+EvernoteImport/target/classes/META-INF/EvernoteImport.kotlin_module
+EvernoteImport/target/classes/JourneyImport.class
+EvernoteImport/target/classes/Import.class
+EvernoteImport/.idea/modules.xml
+EvernoteImport/.idea/misc.xml
+EvernoteImport/.idea/inspectionProfiles/Project_Default.xml
+EvernoteImport/.idea/compiler.xml

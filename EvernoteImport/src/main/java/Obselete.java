@@ -19,7 +19,7 @@ import java.util.zip.ZipOutputStream;
 /**
  *
  */
-public class Import {
+public class Obselete {
 
     private static Document enexDocument;
     private static Document createdDocument;

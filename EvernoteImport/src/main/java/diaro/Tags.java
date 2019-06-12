@@ -1,3 +1,5 @@
+package diaro;
+
 public class Tags {
 
     public String tagsId;

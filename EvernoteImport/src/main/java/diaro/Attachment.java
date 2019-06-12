@@ -1,9 +1,11 @@
+package diaro;
+
 public class Attachment {
-    String uid;
-    String entry_uid;
-    String type;
-    String filename;
-    byte[] data;
+    public String uid;
+    public String entry_uid;
+    public String type;
+    public String filename;
+    public  byte[] data;
 
     public Attachment(String uid, String entry_uid, String type, String filename , byte[] data) {
         this.uid = uid;

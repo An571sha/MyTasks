@@ -1,3 +1,5 @@
+package diaro;
+
 public  class Folder {
 
     public String title;
