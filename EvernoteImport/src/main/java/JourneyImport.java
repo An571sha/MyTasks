@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
@@ -83,36 +84,6 @@ public class JourneyImport {
 
     public static void collectVaraiblesForList() {
 
-        //defining the variables
-        String title = "";
-
-        String tag_uid = "";
-        String tag_text = "";
-
-        String location_uid;
-        String latitude = "";
-        String longitude = "";
-        String address = "";
-
-        String weather_temp = "";
-        String weather_description = "";
-        String weather_icon = "";
-
-        String attachment_uid = null;
-        String entry_uid;
-        String type = "photo";
-        String mime = "";
-        String fileName = "";
-
-        String entry_text = "";
-        String entry_title = "";
-        String entry_date = "";
-
-        Tags tag;
-        Location location;
-        Entry entry;
-        Attachment attachment;
-
         //initializing the list
         foldersList = new ArrayList<>();
         entriesList = new ArrayList<>();
@@ -124,9 +95,31 @@ public class JourneyImport {
         uidForEachLocation = new LinkedHashMap<>();
 
         for (String journeyEntry : listOfEntriesAsJson) {
+            //defining the variables
+            String tag_uid = "";
+            String tag_text;
+
+            String location_uid;
+            String latitude = "";
+            String longitude = "";
+            String address;
+
+            String weather_temp = "";
+            String weather_description = "";
+            String weather_icon = "";
+
+            String attachment_uid;
+            String entry_uid;
+            String type = "photo";
+            String fileName;
+
+            String entry_text = "";
+            String entry_title = "";
+            String entry_date = "";
 
             //create new entry JSONObject with entry as root
             JSONObject rootJsonObject = new JSONObject(journeyEntry);
+            JSONObject journey_weather = rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER);
 
             //-- collecting TAGS
             if (rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS) != null && rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS).length() > 0) {
@@ -138,7 +131,7 @@ public class JourneyImport {
                     if (!uidForEachTag.containsKey(tag_text)) {
                         uidForEachTag.put(tag_text, Entry.generateRandomUid());
                     }
-                    tag = new Tags(uidForEachTag.get(tag_text), tag_text);
+                   Tags tag = new Tags(uidForEachTag.get(tag_text), tag_text);
                     tagsForEntryList.add(tag);
                 }
 
@@ -147,68 +140,62 @@ public class JourneyImport {
             foldersList.add(new Folder(FOLDER_TITLE, FOLDER_COLOR, FOLDER_UID));
 
             //-- collecting location
-            if (Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE)) != null && Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LONGITUDE)) != null) {
+            if (!rootJsonObject.isNull(KEY_JOURNEY_LATITUDE) && !rootJsonObject.isNull(KEY_JOURNEY_LONGITUDE)) {
 
                 latitude = Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE));
                 longitude = Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE));
             }
-            //if address is available
-            if (rootJsonObject.getString(KEY_JOURNEY_ADDRESS) != null && !rootJsonObject.getString(KEY_JOURNEY_ADDRESS).isEmpty()) {
 
+            //if address is available
+            //check for address in weather
+            //if no address found, display address as {Lat,Lng}
+            if (!rootJsonObject.isNull(KEY_JOURNEY_ADDRESS) && !rootJsonObject.getString(KEY_JOURNEY_ADDRESS).isEmpty()) {
                 address = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                //check for address in weather
-            } else if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_PLACE) != null
-                    && !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_PLACE).isEmpty()) {
+            } else if (!journey_weather.isNull(KEY_JOURNEY__WEATHER_PLACE) && !journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE).isEmpty()) {
+                address = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
 
-                address = rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_PLACE);
-
-                //if no address found, display address as {Lat,Lng}
             } else {
-
                 address = Entry.addLocation(latitude, longitude);
             }
 
             //mapping every uid to the address
-            if (!uidForEachLocation.containsKey(address)) {
-                uidForEachLocation.put(address, Entry.generateRandomUid());
-            }
-
+            if (!uidForEachLocation.containsKey(address)) { uidForEachLocation.put(address, Entry.generateRandomUid()); }
             location_uid = uidForEachLocation.get(address);
 
-            location = new Location(location_uid, latitude, longitude, address, DEFAULT_ZOOM);
+            Location location = new Location(location_uid, latitude, longitude, address, DEFAULT_ZOOM);
             locationsList.add(location);
 
             //-- collecting weather info
             //checking if weather exists
-            if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER) != null && rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).length() != 0) {
+            if (journey_weather != null && journey_weather.length() != 0) {
+                if (!journey_weather.isNull(KEY_JOURNEY__WEATHER_DEGREE) &&
+                        !journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).isEmpty() &&
+                        !journey_weather.getString(KEY_JOURNEY__WEATHER_ICON).isEmpty()) {
 
-                if (Double.toString(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getDouble(KEY_JOURNEY__WEATHER_DEGREE)) != null) {
-                    weather_temp = Double.toString(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getDouble(KEY_JOURNEY__WEATHER_DEGREE));
-                }
-                if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION) != null &&
-                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION).isEmpty()) {
-                    weather_description = rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
-                }
-                if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON) != null &&
-                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON).isEmpty()) {
-                    //get weather icon info
-                    weather_icon = iconCodeToName(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON));
+                    weather_temp = Double.toString(journey_weather.getDouble(KEY_JOURNEY__WEATHER_DEGREE));
+                    weather_description = journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
+                    weather_icon = iconCodeToName(journey_weather.getString(KEY_JOURNEY__WEATHER_ICON));
                 }
             }
+
             //--collecting text and titles
             entry_uid = Entry.generateRandomUid();
 
-            if (rootJsonObject.getString(KEY_JOURNEY_TEXT) != null && !rootJsonObject.getString(KEY_JOURNEY_TEXT).isEmpty()) {
-                entry_text = rootJsonObject.getString(KEY_JOURNEY_TEXT);
+            String journey_text = rootJsonObject.getString(KEY_JOURNEY_TEXT);
+            String journey_preview_text = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
+            BigInteger journey_date= rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL);
+
+            if (!rootJsonObject.isNull(KEY_JOURNEY_TEXT) && !journey_text.isEmpty()) {
+                entry_text = journey_text;
             }
 
-            if (rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT) != null && !rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT).isEmpty()) {
-                entry_title = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
+            if (!rootJsonObject.isNull(KEY_JOURNEY_PREVIEW_TEXT) && !journey_preview_text.isEmpty()) {
+                entry_title = journey_preview_text;
             }
 
-            if (String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL)) != null && !String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL)).isEmpty()) {
-                entry_date = String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL));
+            if (!rootJsonObject.isNull(KEY_JOURNEY_DATE_JOURNAL) && !String.valueOf(journey_date).isEmpty()) {
+                entry_date = String.valueOf(journey_date);
             }
             //looping through all the tags
             //appending the tags in a String
@@ -219,7 +206,7 @@ public class JourneyImport {
                 tag_uid = tag_uid + (",");
                 System.out.println(tag_uid);
             }
-            entry = new Entry(entry_uid, entry_date, entry_title, entry_text, FOLDER_UID, location_uid, tag_uid);
+            Entry entry = new Entry(entry_uid, entry_date, entry_title, entry_text, FOLDER_UID, location_uid, tag_uid);
             entry.weather_temperature = weather_temp;
             entry.weather_description = weather_description;
             entry.weather_icon = weather_icon;
@@ -231,7 +218,7 @@ public class JourneyImport {
             tag_uid = "";
 
             //--collecting and renaming attachments
-            if (rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS) != null && rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS).length() > 0) {
+            if (!rootJsonObject.isNull(KEY_JOURNEY_PHOTOS)&& rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS).length() > 0) {
                 JSONArray photosArray = rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS);
                 for (int i = 0; i < photosArray.length(); i++) {
                     attachment_uid = Entry.generateRandomUid();
@@ -241,13 +228,13 @@ public class JourneyImport {
                     String newFileName = Entry.setNewFileName(fileName);
 
                     //change the corresponding file name in zip
-                    try {
-                        searchAndRenameFileInZip(fileName,newFileName);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                       // searchAndRenameFileInZip(fileName,newFileName);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
 
-                    attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
+                    Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
                     attachmentList.add(attachment);
                 }
 
@@ -255,14 +242,6 @@ public class JourneyImport {
         }
     }
 
-//    public static String getJsonStringOrObject (Object input, JSONObject rootJsonObject){
-//        if (input instanceof String){
-//            return rootJsonObject.getString((String) input);
-//
-//        }else if (input instanceof Double)
-//            return rootJsonObject.getDouble(String.valueOf(input));
-//
-//    }
 
     public static void searchAndRenameFileInZip(String oldName, String newName) throws IOException,SecurityException {
         //using java nio library's FileSystem for renaming files

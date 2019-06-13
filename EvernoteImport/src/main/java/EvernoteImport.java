@@ -102,19 +102,6 @@ public class EvernoteImport {
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
 
-        String title = "";
-        String parsedHtml = "";
-        String formattedDate = "";
-        String location_uid = "";
-        String mime = "";
-        String fileName = "";
-        String attachment_uid = null;
-        String entry_uid = "";
-        String type = "photo";
-        String baseEncoding;
-
-        String tag_uid = "";
-
         Tags tags;
         Location location;
         Entry entry;
@@ -124,6 +111,19 @@ public class EvernoteImport {
 
         //looping through the list
         for(Node node : nodeList){
+
+            String title = "";
+            String parsedHtml = "";
+            String formattedDate = "";
+            String location_uid = "";
+            String mime = "";
+            String fileName = "";
+            String attachment_uid = null;
+            String entry_uid = "";
+            String type = "photo";
+            String baseEncoding;
+            String tag_uid = "";
+
 
             foldersList.add((new Folder(FOLDER_TITLE,FOLDER_COLOR,FOLDER_UID)));
             //get all tags including duplicates
