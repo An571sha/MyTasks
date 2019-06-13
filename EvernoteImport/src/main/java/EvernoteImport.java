@@ -17,7 +17,7 @@ public class EvernoteImport {
     private static Document xmlDocument;
 
     //input and output paths
-    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
+    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\sample.enex";
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip";
     private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\DiaroBackup.xml";
 
@@ -55,6 +55,7 @@ public class EvernoteImport {
     private static List<Attachment> attachmentList;
 
     private static HashMap<String, String> uidForEachTag;
+    private static HashMap<String, String> uidForEachLocation;
 
     //evernote folder
     private static String FOLDER_UID = Entry.generateRandomUid();
@@ -96,8 +97,10 @@ public class EvernoteImport {
         //hashSet for handling the duplicate fileNames
         fileNameSet = new LinkedHashSet<>();
 
-        //hashMap for Storing the uid for each tag
+        //linkedHashMap for Storing the uid for each tag
         uidForEachTag = new LinkedHashMap<>();
+        uidForEachLocation = new LinkedHashMap<>();
+
         String title = "";
         String parsedHtml = "";
         String formattedDate = "";
@@ -116,8 +119,6 @@ public class EvernoteImport {
         Entry entry;
         Attachment attachment;
 
-        int locationCounter = 0;
-
         byte[] decoded = null;
 
         //looping through the list
@@ -129,9 +130,12 @@ public class EvernoteImport {
                 List<Node> evernote_tags = node.selectNodes(TAG);
                 for (Node evenote_tag : evernote_tags) {
                     //generate unique id for the tag and map it.
-                    uidForEachTag.put(evenote_tag.getText(), Entry.generateRandomUid());
+                    //if the name id pair does not exist
+                    if(!uidForEachTag.containsKey(evenote_tag.getText())) {
+                        uidForEachTag.put(evenote_tag.getText(), Entry.generateRandomUid());
+                    }
                     //create new diaro.Tags Object
-                    tags = new Tags(evenote_tag.getText(), uidForEachTag.get(evenote_tag.getText()));
+                    tags = new Tags(uidForEachTag.get(evenote_tag.getText()),evenote_tag.getText());
                     tagsForEntryList.add(tags);
                 }
             }
@@ -141,7 +145,14 @@ public class EvernoteImport {
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
                 String latitude = node.selectSingleNode(LATITUDE).getText();
                 String longitude = node.selectSingleNode(LONGITUDE).getText();
-                location = new Location(Entry.addLocation(latitude, longitude), Entry.generateRandomUid(),DEFAULT_ZOOM);
+                String location_title = (Entry.addLocation(latitude, longitude));
+
+                //mapping every uid to the address
+                if(!uidForEachLocation.containsKey(location_title)) {
+                    uidForEachLocation.put(location_title, Entry.generateRandomUid());
+                }
+                location_uid = uidForEachLocation.get(location_title);
+                location = new Location(location_title,location_uid,DEFAULT_ZOOM);
                 locationsList.add(location);
             }
 
@@ -171,11 +182,6 @@ public class EvernoteImport {
                 System.out.println(tag_uid);
 
             }
-            //get all location
-            if(locationsList.size()!=0){
-                Location location_name = locationsList.get(locationCounter);
-                location_uid = location_name.location_uid;
-            }
             entry = new Entry(formattedDate,parsedHtml,title,FOLDER_UID,location_uid,tag_uid);
             //clear the list
             //clear the tag_uid variable for next loop
@@ -183,7 +189,6 @@ public class EvernoteImport {
             tag_uid = "";
            //add entry in the list
             entriesList.add(entry);
-            locationCounter++;
 
             //get all the attachments
             if (node.selectSingleNode(RESOURCE) != null) {
