@@ -77,7 +77,8 @@ public class EvernoteImport {
         return reader.read(file);
     }
 
-    /** this method collects all the nodes and variables, and adds them in the corresponding
+    /**this method collects all the nodes and variables, and adds them in the corresponding
+     * <p>
      * Object list.
      *
      * @param document enex document
@@ -221,7 +222,7 @@ public class EvernoteImport {
                             fileNameSet.add(fileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,fileName,decoded);
                         }else{
-                            String newFileName = setNewFileName(fileName);
+                            String newFileName = Entry.setNewFileName(fileName);
                             fileNameSet.add(newFileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,newFileName,decoded);
                         }
@@ -246,16 +247,6 @@ public class EvernoteImport {
         return text.getBytes();
     }
 
-
-    /** creates a new FileName if duplicates are found
-     * @param fileNameString name of the file in attachment
-     * @return the newString
-     */
-    private static String setNewFileName(String fileNameString) {
-        String extension = FilenameUtils.getExtension(fileNameString);
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
-        return timeStamp + "." + extension;
-    }
 
     /** this file creates a new xml document by looping through all the lists of Datatypes and
      * generating the corresponding row
@@ -328,6 +319,7 @@ public class EvernoteImport {
 
     /**
      * this methods generates table tag for each xml elements in xml.This is only generated when the
+     * <p>
      * equivalent node exists in the nodesList
 
      * @param s1 Name of the node inside enex document
@@ -346,6 +338,7 @@ public class EvernoteImport {
 
     /**
      * this method creates a zip file for the given xml document and saves the images in media/photos
+     * <p>
      * @param createdDocument generated xml document for diaro
      */
     private static void createZipOrXmlFile(Document createdDocument) {

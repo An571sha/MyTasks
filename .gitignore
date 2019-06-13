@@ -47,3 +47,5 @@ EvernoteImport/.idea/modules.xml
 EvernoteImport/.idea/misc.xml
 EvernoteImport/.idea/inspectionProfiles/Project_Default.xml
 EvernoteImport/.idea/compiler.xml
+EvernoteImport/target/classes/EvernoteImport.class
+EvernoteImport/target/classes/Obselete.class

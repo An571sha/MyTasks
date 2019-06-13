@@ -2,9 +2,12 @@ package diaro;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
 //import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -167,6 +170,17 @@ public class Entry {
             e.printStackTrace();
         }
         return String.format("(%s,%s)", lat, lng);
+    }
+
+
+    /** creates a new FileName if duplicates are found
+     * @param fileNameString name of the file in attachment
+     * @return the newString
+     */
+    public static String setNewFileName(String fileNameString) {
+        String extension = FilenameUtils.getExtension(fileNameString);
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
+        return timeStamp + "." + extension;
     }
 
 

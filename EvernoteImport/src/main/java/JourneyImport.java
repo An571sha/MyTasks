@@ -4,6 +4,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -52,13 +54,13 @@ public class JourneyImport {
     public static void main(String[] args) {
         try {
             readZipFileAndCreateList();
-        } catch (IOException e) {
+        } catch (IOException | SecurityException e) {
             e.printStackTrace();
         }
-        collectVariables();
+        collectVaraiblesForList();
     }
 
-    private static void readZipFileAndCreateList() throws IOException {
+    private static void readZipFileAndCreateList() throws IOException,SecurityException {
         ZipFile zipFile = new ZipFile(inputPath);
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {
@@ -72,14 +74,14 @@ public class JourneyImport {
                 listOfEntriesAsJson.add(json);
                 stream.close();
             } else if (entry.isDirectory()) {
-
+//--------------------
             }
 
         }
         zipFile.close();
     }
 
-    public static void collectVariables() {
+    public static void collectVaraiblesForList() {
 
         //defining the variables
         String title = "";
@@ -87,7 +89,7 @@ public class JourneyImport {
         String tag_uid = "";
         String tag_text = "";
 
-        String location_uid = "";
+        String location_uid;
         String latitude = "";
         String longitude = "";
         String address = "";
@@ -97,15 +99,14 @@ public class JourneyImport {
         String weather_icon = "";
 
         String attachment_uid = null;
-        String entry_uid = "";
+        String entry_uid;
         String type = "photo";
-        String baseEncoding;
         String mime = "";
         String fileName = "";
 
-        String entry_text= "";
-        String entry_title= "";
-        String entry_date= "";
+        String entry_text = "";
+        String entry_title = "";
+        String entry_date = "";
 
         Tags tag;
         Location location;
@@ -127,7 +128,7 @@ public class JourneyImport {
             //create new entry JSONObject with entry as root
             JSONObject rootJsonObject = new JSONObject(journeyEntry);
 
-            //-- collecting tags
+            //-- collecting TAGS
             if (rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS) != null && rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS).length() > 0) {
                 JSONArray tagsArray = rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS);
                 for (int i = 0; i < tagsArray.length(); i++) {
@@ -145,12 +146,7 @@ public class JourneyImport {
             //-- collecting folders
             foldersList.add(new Folder(FOLDER_TITLE, FOLDER_COLOR, FOLDER_UID));
 
-            //-- collecting location data
-            /***
-             * TODO create a locations Map and correct the location map in Evernote import
-             */
-
-
+            //-- collecting location
             if (Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE)) != null && Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LONGITUDE)) != null) {
 
                 latitude = Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE));
@@ -174,7 +170,7 @@ public class JourneyImport {
             }
 
             //mapping every uid to the address
-            if(!uidForEachLocation.containsKey(address)){
+            if (!uidForEachLocation.containsKey(address)) {
                 uidForEachLocation.put(address, Entry.generateRandomUid());
             }
 
@@ -190,59 +186,113 @@ public class JourneyImport {
                 if (Double.toString(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getDouble(KEY_JOURNEY__WEATHER_DEGREE)) != null) {
                     weather_temp = Double.toString(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getDouble(KEY_JOURNEY__WEATHER_DEGREE));
                 }
-                if(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION)!= null &&
-                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION).isEmpty()){
+                if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION) != null &&
+                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION).isEmpty()) {
                     weather_description = rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
                 }
-                if(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON)!= null &&
-                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON).isEmpty()){
+                if (rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON) != null &&
+                        !rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON).isEmpty()) {
                     //get weather icon info
-                    weather_icon = basicIconToName(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON));
+                    weather_icon = iconCodeToName(rootJsonObject.getJSONObject(KEY_JOURNEY__WEATHER).getString(KEY_JOURNEY__WEATHER_ICON));
                 }
             }
             //--collecting text and titles
             entry_uid = Entry.generateRandomUid();
 
-            if(rootJsonObject.getString(KEY_JOURNEY_TEXT)!=null && !rootJsonObject.getString(KEY_JOURNEY_TEXT).isEmpty()){
+            if (rootJsonObject.getString(KEY_JOURNEY_TEXT) != null && !rootJsonObject.getString(KEY_JOURNEY_TEXT).isEmpty()) {
                 entry_text = rootJsonObject.getString(KEY_JOURNEY_TEXT);
             }
 
-            if(rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT)!=null && !rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT).isEmpty()){
-                entry_title = rootJsonObject.getString(KEY_JOURNEY_TEXT);
+            if (rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT) != null && !rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT).isEmpty()) {
+                entry_title = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
             }
 
-            if(rootJsonObject.getString(KEY_JOURNEY_DATE_JOURNAL)!=null && !rootJsonObject.getString(KEY_JOURNEY_DATE_JOURNAL).isEmpty()){
-                entry_date = rootJsonObject.getString(KEY_JOURNEY_DATE_JOURNAL);
+            if (String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL)) != null && !String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL)).isEmpty()) {
+                entry_date = String.valueOf(rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL));
             }
             //looping through all the tags
             //appending the tags in a String
-            if(tagsForEntryList.size() != 0) {
+            if (tagsForEntryList.size() != 0) {
                 for (Tags tagsForEntry : tagsForEntryList) {
                     tag_uid = tag_uid + (",") + (String.join(",", tagsForEntry.tagsId));
                 }
                 tag_uid = tag_uid + (",");
                 System.out.println(tag_uid);
-                entry = new Entry(entry_uid, entry_date, entry_title, entry_text, FOLDER_UID, location_uid, tag_uid);
-                entry.weather_temperature = weather_temp;
-                entry.weather_description = weather_description;
-                entry.weather_icon = weather_icon;
-                entriesList.add(entry);
-
             }
+            entry = new Entry(entry_uid, entry_date, entry_title, entry_text, FOLDER_UID, location_uid, tag_uid);
+            entry.weather_temperature = weather_temp;
+            entry.weather_description = weather_description;
+            entry.weather_icon = weather_icon;
+            entriesList.add(entry);
+
+
             //clear the list and variable before another loop starts
             tagsForEntryList.clear();
             tag_uid = "";
 
+            //--collecting and renaming attachments
+            if (rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS) != null && rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS).length() > 0) {
+                JSONArray photosArray = rootJsonObject.getJSONArray(KEY_JOURNEY_PHOTOS);
+                for (int i = 0; i < photosArray.length(); i++) {
+                    attachment_uid = Entry.generateRandomUid();
+                    fileName = photosArray.getString(i);
 
+                    //generate new File Name
+                    String newFileName = Entry.setNewFileName(fileName);
 
+                    //change the corresponding file name in zip
+                    try {
+                        searchAndRenameFileInZip(fileName,newFileName);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
+                    attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
+                    attachmentList.add(attachment);
+                }
 
-
+            }
         }
     }
 
+//    public static String getJsonStringOrObject (Object input, JSONObject rootJsonObject){
+//        if (input instanceof String){
+//            return rootJsonObject.getString((String) input);
+//
+//        }else if (input instanceof Double)
+//            return rootJsonObject.getDouble(String.valueOf(input));
+//
+//    }
 
-    public static String basicIconToName(String icon){
+    public static void searchAndRenameFileInZip(String oldName, String newName) throws IOException,SecurityException {
+        //using java nio library's FileSystem for renaming files
+        Path zipFile = Paths.get(inputPath);
+        final URI uri = URI.create("jar:file:" + zipFile.toUri().getPath());
+
+        // Defining ZIP File System Properties in HashMap
+        Map<String, String> zip_properties = new HashMap<>();
+        zip_properties.put("create", "true");
+
+        FileSystem zipFS = FileSystems.newFileSystem(uri, zip_properties, null);
+        Path path = zipFS.getPath("/" + oldName);
+
+        //check for compatibility
+        if (pathMatcher(".png",path)|| pathMatcher(".gif",path)|| pathMatcher(".jpg",path)|| pathMatcher(".jpeg",path)){
+            Path newPath = zipFS.getPath("/"+ newName);
+            Files.move(path,newPath);
+            System.out.println("File successfully renamed");
+        }
+        zipFS.close();
+    }
+
+    public static boolean pathMatcher(String extension , Path path){
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:*" + extension);
+        return matcher.matches(path);
+
+    }
+
+
+    public static String iconCodeToName(String icon){
         HashMap<String,String> iconAndNameMap = new LinkedHashMap<>();
 
         iconAndNameMap.put("01d" ,"day-sunny");
@@ -267,7 +317,6 @@ public class JourneyImport {
         if(!icon.isEmpty() && iconAndNameMap.containsKey(icon)){
             return iconAndNameMap.get(icon);
         }
-
         return "";
     }
 }

@@ -7,6 +7,7 @@ public class Attachment {
     public String filename;
     public  byte[] data;
 
+    //Evernote
     public Attachment(String uid, String entry_uid, String type, String filename , byte[] data) {
         this.uid = uid;
         this.entry_uid = entry_uid;
@@ -14,6 +15,14 @@ public class Attachment {
         this.filename = filename;
         this.data = data;
     }
+    //Journey
+    public Attachment(String uid, String entry_uid, String type, String filename) {
+        this.uid = uid;
+        this.entry_uid = entry_uid;
+        this.type = type;
+        this.filename = filename;
+    }
+
 
 
 }
