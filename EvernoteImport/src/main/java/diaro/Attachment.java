@@ -1,5 +1,7 @@
 package diaro;
 
+import org.dom4j.Element;
+
 public class Attachment {
     public String uid;
     public String entry_uid;
@@ -21,6 +23,13 @@ public class Attachment {
         this.entry_uid = entry_uid;
         this.type = type;
         this.filename = filename;
+    }
+
+    public static void generateAttachmentTable(Attachment attachment , Element row ) {
+        row.addElement(Entry.KEY_UID).addText(attachment.uid);
+        row.addElement(Entry.KEY_ENTRY_UID).addText(attachment.entry_uid);
+        row.addElement("type").addText("photo");
+        row.addElement(Entry.KEY_ENTRY_FILENAME).addText(attachment.filename);
     }
 
 

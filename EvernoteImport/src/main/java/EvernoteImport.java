@@ -45,13 +45,11 @@ public class EvernoteImport {
 
     //lists
     private static Set<String> fileNameSet;
-    private static List<Node> allTagsList;
     private static List<Node> nodeList;
     private static List<Entry> entriesList;
     private static List<Tags> tagsList;
     private static List<Tags> tagsForEntryList;
     private static List<Location> locationsList;
-    private static List<Folder> foldersList;
     private static List<Attachment> attachmentList;
 
     private static HashMap<String, String> uidForEachTag;
@@ -88,8 +86,6 @@ public class EvernoteImport {
         nodeList = document.selectNodes(NOTES);
 
         //initialising the lists
-        foldersList = new ArrayList<>();
-        tagsList = new ArrayList<>();
         entriesList = new ArrayList<>();
         locationsList = new ArrayList<>();
         attachmentList = new ArrayList<>();
@@ -124,8 +120,6 @@ public class EvernoteImport {
             String baseEncoding;
             String tag_uid = "";
 
-
-            foldersList.add((new Folder(FOLDER_TITLE,FOLDER_COLOR,FOLDER_UID)));
             //get all tags including duplicates
             if( node.selectSingleNode(TAG) !=null) {
                 List<Node> evernote_tags = node.selectNodes(TAG);
@@ -258,60 +252,46 @@ public class EvernoteImport {
         Element root = createdXmlDocument.addElement("data").addAttribute("version", "2");
 
         //adding folders table
-        // this loop generates folder table. All the folders have a constant
+        // generate folder table. All the folders have a constant
         // uid, title and colour. As evernote does not provide any data regarding folders.
         Element folderRoot = root.addElement("table").addAttribute("title", diaro_folders);
-        for(Folder folder: foldersList){
-            Element row =  folderRoot.addElement("r");
-
-            row.addElement(Entry.KEY_UID).addText(FOLDER_UID);
-            row.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
-            row.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
-        }
+        Element folderRow =  folderRoot.addElement("r");
+        folderRow.addElement(Entry.KEY_UID).addText(FOLDER_UID);
+        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
+        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
 
         //adding tags table
         Element tagRoot = generateTableTag(TAG, diaro_tags,root);
-        for(Map.Entry<String,String> entry : uidForEachTag.entrySet() ){
+        for(Map.Entry<String,String> tag : uidForEachTag.entrySet() ){
 
-            Element row = tagRoot.addElement("r");
-            row.addElement(Entry.KEY_UID).addText(entry.getValue());
-            row.addElement(Entry.KEY_ENTRY_TAGS_TITLE).addText(entry.getKey());
+            assert tagRoot != null;
+            Element tagRow = tagRoot.addElement("r");
+            Tags.generateTagTable(tag,tagRow);
         }
 
         //adding locations table
         Element locationRoot = generateTableTag(LATITUDE, diaro_locations,root);
         for(Location location : locationsList){
-            Element row = locationRoot.addElement("r");
-            row.addElement(Entry.KEY_UID).addText(location.location_uid);
-            row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(location.title);
-            row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(location.zoom);
+
+            assert locationRoot != null;
+            Element locationRow = locationRoot.addElement("r");
+            Location.generateLocationTable(location,locationRow);
         }
 
         //adding entries table
         Element entryRoot = root.addElement("table").addAttribute("title", diaro_entries);
         for(Entry entry: entriesList){
-
             Element entriesRow = entryRoot.addElement("r");
-            entriesRow.addElement(Entry.KEY_UID).addText(entry.uid);
-            entriesRow.addElement(Entry.KEY_ENTRY_DATE).addText(entry.date);
-            entriesRow.addElement(Entry.KEY_ENTRY_TITLE).addText(entry.title);
-            entriesRow.addElement(Entry.KEY_ENTRY_TEXT).addText(entry.text);
-            entriesRow.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
-            entriesRow.addElement(Entry.KEY_ENTRY_TAGS).addText(entry.tags);
-            entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
-            entriesRow.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(FOLDER_UID);
-            entriesRow.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
+            Entry.generateEntryTable(entry,entriesRow,FOLDER_UID);
         }
 
         //adding attachments table
         Element attachmentsRoot = generateTableTag(RESOURCE, diaro_attachments,root);
         for(Attachment attachment: attachmentList){
 
-            Element row =  attachmentsRoot.addElement("r");
-            row.addElement(Entry.KEY_UID).addText(attachment.uid);
-            row.addElement(Entry.KEY_ENTRY_UID).addText(attachment.entry_uid);
-            row.addElement("type").addText("photo");
-            row.addElement(Entry.KEY_ENTRY_FILENAME).addText(attachment.filename);
+            assert attachmentsRoot != null;
+            Element attachmentRow =  attachmentsRoot.addElement("r");
+            Attachment.generateAttachmentTable(attachment,attachmentRow);
 
         }
         return createdXmlDocument;

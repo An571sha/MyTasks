@@ -9,6 +9,7 @@ import java.util.Random;
 //import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.dom4j.Element;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -32,6 +33,9 @@ public class Entry {
     public final static String KEY_ENTRY_TAGS_TITLE = "title";
     public final static String KEY_ENTRY_PRIMARY_PHOTO_UID = "primary_photo_uid";
     public final static String KEY_ENTRY_FILENAME = "filename";
+    public final static String KEY_ENTRY_WEATHER_TEMP = "weather_temperature";
+    public final static String KEY_ENTRY_WEATHER_DESC = "weather_description";
+    public final static String KEY_ENTRY_WEATHER_ICON = "weather_icon";
 
     public static String dateFormatNormal = "dd/MM/yyyy";
     public static String dateFormatUS = "MM/dd/yy";
@@ -182,6 +186,30 @@ public class Entry {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
         return timeStamp + "." + extension;
     }
+
+    public static void generateEntryTable(Entry entry , Element entriesRow , String folder_uid){
+
+        entriesRow.addElement(Entry.KEY_UID).addText(entry.uid);
+        entriesRow.addElement(Entry.KEY_ENTRY_DATE).addText(entry.date);
+        entriesRow.addElement(Entry.KEY_ENTRY_TITLE).addText(entry.title);
+        entriesRow.addElement(Entry.KEY_ENTRY_TEXT).addText(entry.text);
+        entriesRow.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
+        entriesRow.addElement(Entry.KEY_ENTRY_TAGS).addText(entry.tags);
+        entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
+        entriesRow.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(folder_uid);
+        entriesRow.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
+
+        if(entry.weather_icon !=null && !entry.weather_icon.isEmpty()  &&
+                entry.weather_temperature !=null && !entry.weather_temperature.isEmpty() &&
+                entry.weather_description !=null && !entry.weather_description.isEmpty()){
+
+            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_TEMP).addText(entry.weather_temperature);
+            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_DESC).addText(entry.weather_description);
+            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_ICON).addText(entry.weather_icon);
+        }
+    }
+
+
 
 
 
