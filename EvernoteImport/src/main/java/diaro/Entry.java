@@ -9,6 +9,7 @@ import java.util.Random;
 //import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.dom4j.Document;
 import org.dom4j.Element;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -162,7 +163,7 @@ public class Entry {
         return dtNew.getMillis();
     }
 
-    public static String addLocation(String lat, String lng){
+    public static String concatLatLng(String lat, String lng){
         try {
             int latDotIndex = lat.indexOf(".");
             lat = lat.substring(0, latDotIndex) + lat.substring(latDotIndex, latDotIndex + 7);
@@ -189,26 +190,34 @@ public class Entry {
 
     public static void generateEntryTable(Entry entry , Element entriesRow , String folder_uid){
 
-        entriesRow.addElement(Entry.KEY_UID).addText(entry.uid);
-        entriesRow.addElement(Entry.KEY_ENTRY_DATE).addText(entry.date);
-        entriesRow.addElement(Entry.KEY_ENTRY_TITLE).addText(entry.title);
-        entriesRow.addElement(Entry.KEY_ENTRY_TEXT).addText(entry.text);
-        entriesRow.addElement(Entry.KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
-        entriesRow.addElement(Entry.KEY_ENTRY_TAGS).addText(entry.tags);
+        entriesRow.addElement(KEY_UID).addText(entry.uid);
+        entriesRow.addElement(KEY_ENTRY_DATE).addText(entry.date);
+        entriesRow.addElement(KEY_ENTRY_TITLE).addText(entry.title);
+        entriesRow.addElement(KEY_ENTRY_TEXT).addText(entry.text);
+        entriesRow.addElement(KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
+        entriesRow.addElement(KEY_ENTRY_TAGS).addText(entry.tags);
         entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
-        entriesRow.addElement(Entry.KEY_ENTRY_FOLDER_UID).addText(folder_uid);
-        entriesRow.addElement(Entry.KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
+        entriesRow.addElement(KEY_ENTRY_FOLDER_UID).addText(folder_uid);
+        entriesRow.addElement(KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
 
         if(entry.weather_icon !=null && !entry.weather_icon.isEmpty()  &&
                 entry.weather_temperature !=null && !entry.weather_temperature.isEmpty() &&
                 entry.weather_description !=null && !entry.weather_description.isEmpty()){
 
-            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_TEMP).addText(entry.weather_temperature);
-            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_DESC).addText(entry.weather_description);
-            entriesRow.addElement(Entry.KEY_ENTRY_WEATHER_ICON).addText(entry.weather_icon);
+            entriesRow.addElement(KEY_ENTRY_WEATHER_TEMP).addText(entry.weather_temperature);
+            entriesRow.addElement(KEY_ENTRY_WEATHER_DESC).addText(entry.weather_description);
+            entriesRow.addElement(KEY_ENTRY_WEATHER_ICON).addText(entry.weather_icon);
         }
     }
 
+    /**
+     * @param document xml document
+     * @return byte[] for zipOutputStream
+     */
+    public static byte[] toBytes(Document document) {
+        String text = document.asXML();
+        return text.getBytes();
+    }
 
 
 

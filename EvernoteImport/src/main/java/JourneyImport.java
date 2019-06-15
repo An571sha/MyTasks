@@ -2,21 +2,17 @@ import diaro.*;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.XMLWriter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class JourneyImport {
     private static final String zipFilePath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
@@ -75,7 +71,7 @@ public class JourneyImport {
         } catch (IOException | SecurityException e) {
             e.printStackTrace();
         }
-        collectVaraiblesForList();
+        collectVariablesForList();
         xmlDocument = generateXml();
         writeXmlToZip(xmlDocument);
 
@@ -94,15 +90,13 @@ public class JourneyImport {
                 String json = new String(data);
                 listOfEntriesAsJson.add(json);
                 stream.close();
-            } else if (entry.isDirectory()) {
-//--------------------
             }
 
         }
         zipFile.close();
     }
 
-    public static void collectVaraiblesForList() {
+    private static void collectVariablesForList() {
 
         //initializing the list
         entriesList = new ArrayList<>();
@@ -113,6 +107,8 @@ public class JourneyImport {
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
 
+
+        //creating a new Folder Object
         folder = new Folder(FOLDER_TITLE, FOLDER_COLOR, FOLDER_UID);
 
         //weather icon info
@@ -148,7 +144,7 @@ public class JourneyImport {
             //-- collecting TAGS
             String tag_uid = "";
             String tag_title = "";
-            if (rootJsonObject.isNull(KEY_JOURNEY_TAGS)) {
+            if (!rootJsonObject.isNull(KEY_JOURNEY_TAGS)) {
                 JSONArray tagsArray = rootJsonObject.getJSONArray(KEY_JOURNEY_TAGS);
                 for (int i = 0; i < tagsArray.length(); i++) {
                     tag_title = tagsArray.getString(i);
@@ -174,32 +170,35 @@ public class JourneyImport {
                 //check for address in weather
                 //if no address found, display address as {Lat,Lng}
 
-                if (!rootJsonObject.isNull(KEY_JOURNEY_ADDRESS) && !rootJsonObject.getString(KEY_JOURNEY_ADDRESS).isEmpty()) {
+                if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_ADDRESS)) {
                     title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                } else if (!journey_weather.isNull(KEY_JOURNEY__WEATHER_PLACE) && !journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE).isEmpty()) {
+                } else if (!areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_PLACE)) {
                     title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
 
                 } else {
-                    title = Entry.addLocation(latitude, longitude);
+                    title = Entry.concatLatLng(latitude, longitude);
                 }
 
                 //mapping every uid to the title
-                if (!uidForEachLocation.containsKey(title)) { uidForEachLocation.put(title, Entry.generateRandomUid()); }
+                if (!uidForEachLocation.containsKey(title)) {
+                    uidForEachLocation.put(title, Entry.generateRandomUid()); }
+
                 location_uid = uidForEachLocation.get(title);
 
                 Location location = new Location(location_uid, latitude, longitude, title, DEFAULT_ZOOM);
                 locationsList.add(location);
             }
+
             //-- collecting weather info
             //checking if weather exists
             String weather_temp = "";
             String weather_description = "";
             String weather_icon = "";
-            if (journey_weather != null && journey_weather.length() != 0) {
-                if (!journey_weather.isNull(KEY_JOURNEY__WEATHER_DEGREE) &&
-                        !journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).isEmpty() &&
-                        !journey_weather.getString(KEY_JOURNEY__WEATHER_ICON).isEmpty()) {
+            if (journey_weather != null && !journey_weather.isEmpty()) {
+                if (!areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
+                        !areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
+                        !areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
 
                     weather_temp = Double.toString(journey_weather.getDouble(KEY_JOURNEY__WEATHER_DEGREE));
                     weather_description = journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
@@ -217,17 +216,18 @@ public class JourneyImport {
             String journey_preview_text = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
             BigInteger journey_date= rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL);
 
-            if (!rootJsonObject.isNull(KEY_JOURNEY_TEXT) && !journey_text.isEmpty()) {
+            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
                 entry_text = journey_text;
             }
 
-            if (!rootJsonObject.isNull(KEY_JOURNEY_PREVIEW_TEXT) && !journey_preview_text.isEmpty()) {
+            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
                 entry_title = journey_preview_text;
             }
 
-            if (!rootJsonObject.isNull(KEY_JOURNEY_DATE_JOURNAL) && !String.valueOf(journey_date).isEmpty()) {
+            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
                 entry_date = String.valueOf(journey_date);
             }
+
             //looping through all the tags
             //appending the tags in a String
             if (tagsForEntryList.size() != 0) {
@@ -237,7 +237,7 @@ public class JourneyImport {
                 tag_uid = tag_uid + (",");
                 System.out.println(tag_uid);
             }
-            Entry entry = new Entry(
+           Entry entry = new Entry(
                     entry_uid,
                     entry_date,
                     entry_title,
@@ -253,7 +253,6 @@ public class JourneyImport {
 
             //clear the list and variable before another loop starts
             tagsForEntryList.clear();
-            tag_uid = "";
 
             //--collecting and renaming attachments
             String attachment_uid;
@@ -284,7 +283,7 @@ public class JourneyImport {
     }
 
 
-    public static void searchAndRenameFileInZip(String oldName, String newName) throws IOException,SecurityException {
+    private static void searchAndRenameFileInZip(String oldName, String newName) throws IOException,SecurityException {
         //using java nio library's FileSystem for renaming files
         Path zipFile = Paths.get(zipFilePath);
         final URI uri = URI.create("jar:file:" + zipFile.toUri().getPath());
@@ -354,29 +353,52 @@ public class JourneyImport {
 
     }
 
-    public static void writeXmlToZip(Document createdDocument){
-        OutputFormat format = OutputFormat.createPrettyPrint();
+    private static void writeXmlToZip(Document createdDocument){
+        File zipFile = new File(zipFilePath);
+        ZipOutputStream zipOutputStream = null;
         try {
-            OutputStream outputStream = new FileOutputStream(outputPath);
-            XMLWriter writer = new XMLWriter(outputStream, format);
-            writer.write(createdDocument);
-        } catch (IOException e ) {
+            zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        ZipEntry xmlOutputStream = new ZipEntry("diaro/DiaroBackup.xml");
+        try {
+            assert zipOutputStream != null;
+            zipOutputStream.putNextEntry(xmlOutputStream);
+            zipOutputStream.write(Entry.toBytes(createdDocument));
+            //closing the stream
+            //! not closing the stream can result in malformed zip files
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+            zipOutputStream.closeEntry();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static boolean pathMatcher(String extension , Path path){
+    private static boolean pathMatcher(String extension, Path path){
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:*" + extension);
         return matcher.matches(path);
 
     }
 
 
-    public static String iconCodeToName(String icon , Map<String,String> weatherIconToNameMap){
+    private static String iconCodeToName(String icon, Map<String, String> weatherIconToNameMap){
         if(!icon.isEmpty() && weatherIconToNameMap.containsKey(icon)){
             return weatherIconToNameMap.get(icon);
         }
         return "";
+    }
+
+    private static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
+        if(rootJsonObject.get(key) instanceof String) {
+            return rootJsonObject.isNull(key) || rootJsonObject.getString(key).isEmpty();
+
+        } else if(rootJsonObject.get(key) instanceof JSONObject){
+            return rootJsonObject.isNull(key);
+        }
+
+        return false;
     }
 
 
