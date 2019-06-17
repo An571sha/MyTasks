@@ -1,5 +1,4 @@
 import diaro.*;
-import org.apache.commons.io.FilenameUtils;
 import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
@@ -7,7 +6,6 @@ import org.dom4j.io.XMLWriter;
 import org.jsoup.Jsoup;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -136,11 +134,11 @@ public class EvernoteImport {
             }
 
             //get all Locations
-            // using diaro.Entry.addLocation to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
+            // using diaro.Entry.concatLatLng to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
                 String latitude = node.selectSingleNode(LATITUDE).getText();
                 String longitude = node.selectSingleNode(LONGITUDE).getText();
-                String location_title = (Entry.addLocation(latitude, longitude));
+                String location_title = (Entry.concatLatLng(latitude, longitude));
 
                 //mapping every uid to the address
                 if(!uidForEachLocation.containsKey(location_title)) {
@@ -167,6 +165,7 @@ public class EvernoteImport {
                 String year = date.substring(2, 4);
                 formattedDate = String.format("%s/%s/%s", month, day, year);
             }
+
             //get all the tags
             //append all the string stringBuilder
             if(tagsForEntryList.size() != 0){
@@ -230,15 +229,6 @@ public class EvernoteImport {
 
     private static boolean checkForImageMime(String mime){
         return mime.equals("image/jpeg") || mime.equals("image/jpg") || mime.equals("image/gif") || mime.equals("image/png");
-    }
-
-    /**
-     * @param document xml document
-     * @return byte[] for zipOutputStream
-     */
-    private static byte[] toBytes(Document document) {
-        String text = document.asXML();
-        return text.getBytes();
     }
 
 
@@ -353,7 +343,7 @@ public class EvernoteImport {
             ZipEntry xmlOutputStream = new ZipEntry("DiaroBackup.xml");
             try {
                 zipOutputStream.putNextEntry(xmlOutputStream);
-                zipOutputStream.write(toBytes(createdDocument));
+                zipOutputStream.write(Entry.toBytes(createdDocument));
                 //closing the stream
                 //! not closing the stream can result in malformed zip files
                 zipOutputStream.finish();

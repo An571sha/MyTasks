@@ -12,11 +12,12 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class JourneyImport {
     private static final String zipFilePath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
-    private static final String outputPath = "C:\\Users\\Animesh\\Downloads\\journey_export\\DiaroBackup.xml";
+    private static final String outputPath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey_backup.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
 
@@ -64,17 +65,19 @@ public class JourneyImport {
     private static String diaro_tags = "diaro_tags";
     private static String diaro_locations = "diaro_locations";
 
+    private static final byte[] BUFFER = new byte[4096 * 1024];
 
     public static void main(String[] args) {
         try {
+
             readZipFileAndCreateList();
+            collectVariablesForList();
+            xmlDocument = generateXml();
+            writeXmlAndImagesToZip(xmlDocument);
+
         } catch (IOException | SecurityException e) {
             e.printStackTrace();
         }
-        collectVariablesForList();
-        xmlDocument = generateXml();
-        writeXmlToZip(xmlDocument);
-
     }
 
     private static void readZipFileAndCreateList() throws IOException,SecurityException {
@@ -268,11 +271,11 @@ public class JourneyImport {
                     String newFileName = Entry.setNewFileName(fileName);
 
 //                    change the corresponding file name in zip
-//                    try {
-//                        searchAndRenameFileInZip(fileName,newFileName);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
+                    try {
+                        searchAndRenameFileInZip(fileName,newFileName);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
                     attachmentList.add(attachment);
@@ -285,23 +288,35 @@ public class JourneyImport {
 
     private static void searchAndRenameFileInZip(String oldName, String newName) throws IOException,SecurityException {
         //using java nio library's FileSystem for renaming files
-        Path zipFile = Paths.get(zipFilePath);
-        final URI uri = URI.create("jar:file:" + zipFile.toUri().getPath());
+        Path zipFilePath = Paths.get(JourneyImport.zipFilePath);
+        InputStream theFile = new FileInputStream(JourneyImport.zipFilePath);
+        ZipInputStream stream = new ZipInputStream(theFile);
+        final URI uri = URI.create("jar:file:" + zipFilePath.toUri().getPath());
 
         // Defining ZIP File System Properties in HashMap
         Map<String, String> zip_properties = new HashMap<>();
         zip_properties.put("create", "true");
 
         FileSystem zipFS = FileSystems.newFileSystem(uri, zip_properties, null);
+
         Path path = zipFS.getPath("/" + oldName);
 
         //check for compatibility
         if (pathMatcher(".png",path)|| pathMatcher(".gif",path)|| pathMatcher(".jpg",path)|| pathMatcher(".jpeg",path)){
-            Path newPath = zipFS.getPath("/"+ newName);
-            Files.move(path,newPath);
-            System.out.println("File successfully renamed");
+            ZipEntry entry;
+            //if the attachment name exists in zip
+            while((entry = stream.getNextEntry())!=null) {
+                if(entry.getName().equals(oldName)) {
+                    Path newPath = zipFS.getPath("/" + newName);
+                    Files.move(path, newPath);
+                    System.out.println("File successfully renamed");
+                }
+            }
         }
+        //close the streams
+        stream.close();
         zipFS.close();
+
     }
 
     private static Document generateXml(){
@@ -353,27 +368,40 @@ public class JourneyImport {
 
     }
 
-    private static void writeXmlToZip(Document createdDocument){
-        File zipFile = new File(zipFilePath);
-        ZipOutputStream zipOutputStream = null;
-        try {
-            zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+    private static void writeXmlAndImagesToZip(Document createdDocument) throws IOException,SecurityException {
+        ZipFile war = new ZipFile(zipFilePath);
+        ZipOutputStream append = new ZipOutputStream(new FileOutputStream(outputPath));
+        byte[] buffer = new byte[512];
+
+        // copy contents from existing zip
+        Enumeration<? extends ZipEntry> entries = war.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = (ZipEntry) entries.nextElement();
+            // create a new empty ZipEntry
+            ZipEntry newEntry = new ZipEntry("media/photos" + entry.getName());
+            if(!entry.getName().endsWith("json")) {
+                System.out.println("append: " + newEntry.getName());
+                append.putNextEntry(newEntry);
+                InputStream in = war.getInputStream(entry);
+                while (0 < in.available()) {
+                    int read = in.read(buffer);
+                    if (read > 0) {
+                        append.write(buffer, 0, read);
+                    }
+                }
+            }
         }
-        ZipEntry xmlOutputStream = new ZipEntry("diaro/DiaroBackup.xml");
-        try {
-            assert zipOutputStream != null;
-            zipOutputStream.putNextEntry(xmlOutputStream);
-            zipOutputStream.write(Entry.toBytes(createdDocument));
-            //closing the stream
-            //! not closing the stream can result in malformed zip files
-            zipOutputStream.finish();
-            zipOutputStream.flush();
-            zipOutputStream.closeEntry();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            append.closeEntry();
+            // now append some extra content
+            ZipEntry xmlOutputStream = new ZipEntry("DiaroBackup.xml");
+            System.out.println("append: " + xmlOutputStream.getName());
+            append.putNextEntry(xmlOutputStream);
+            append.write(Entry.toBytes(createdDocument));
+            append.closeEntry();
+            // close
+            war.close();
+            append.close();
+
     }
 
     private static boolean pathMatcher(String extension, Path path){
@@ -400,7 +428,4 @@ public class JourneyImport {
 
         return false;
     }
-
-
-
 }
