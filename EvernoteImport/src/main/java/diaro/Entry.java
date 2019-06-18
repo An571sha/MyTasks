@@ -28,7 +28,10 @@ public class Entry {
     public final static String KEY_ENTRY_FOLDER_COLOR = "color";
     public final static String KEY_ENTRY_LOCATION_UID = "location_uid";
     public final static String KEY_ENTRY_LOCATION_NAME = "title";
+    public final static String KEY_ENTRY_LOCATION_ADDRESS = "address";
     public final static String KEY_ENTRY_LOCATION_ZOOM = "zoom";
+    public final static String KEY_ENTRY_LOCATION_LATITUDE = "lat";
+    public final static String KEY_ENTRY_LOCATION_LONGITUDE = "lng";
     public final static String KEY_ENTRY_TAGS_UID = "tag_uid";
     public final static String KEY_ENTRY_TAGS = "tags";
     public final static String KEY_ENTRY_TAGS_TITLE = "title";

@@ -15,9 +15,9 @@ public class EvernoteImport {
     private static Document xmlDocument;
 
     //input and output paths
-    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\sample.enex";
+    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip";
-    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\DiaroBackup.xml";
+    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\DiaroImport.xml";
 
     //evernote enex nodes
     private static String NOTES = "/en-export/note";
@@ -145,7 +145,7 @@ public class EvernoteImport {
                     uidForEachLocation.put(location_title, Entry.generateRandomUid());
                 }
                 location_uid = uidForEachLocation.get(location_title);
-                location = new Location(location_title,location_uid,DEFAULT_ZOOM);
+                location = new Location(location_uid,latitude,longitude,location_title, location_title, DEFAULT_ZOOM);
                 locationsList.add(location);
             }
 

@@ -14,8 +14,9 @@ import java.util.zip.*;
 
 public class JourneyImport {
 //   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
-   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
-    private static final String outputPath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey_backup.zip";
+//   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
+   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
+    private static final String outputPath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey_import.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
 
@@ -40,7 +41,6 @@ public class JourneyImport {
 
     //defining lists
     private static List<Location> locationsList;
-    private static Folder folder;
     private static List<Attachment> attachmentList;
     private static List<Tags> tagsForEntryList;
     private static List<Entry> entriesList;
@@ -66,6 +66,9 @@ public class JourneyImport {
     //iterator for zipEntries
     private static  Enumeration<? extends ZipEntry> zipEntries;
     private static  ZipFile journeyZipFile;
+    private static  List<String> newFileNameslist;
+
+    private static Folder folder;
 
     //weather icon info
     private static HashMap<String,String> iconAndNameMap = new HashMap<String,String>() {
@@ -195,7 +198,7 @@ public class JourneyImport {
 
                 location_uid = uidForEachLocation.get(title);
 
-                Location location = new Location(location_uid, latitude, longitude, title, DEFAULT_ZOOM);
+                Location location = new Location(location_uid, latitude, longitude, title, title, DEFAULT_ZOOM);
                 locationsList.add(location);
             }
 
@@ -278,7 +281,7 @@ public class JourneyImport {
                     //check for compatibility
 
                     if (newFileName.endsWith(".png")|| newFileName.endsWith(".gif")|| newFileName.endsWith(".jpg")|| newFileName.endsWith(".jpeg")){
-//                    change the corresponding file name in zip
+                    //change the corresponding file name in zip if it exists
                         try {
                             searchAndRenameFilesInZip(fileName, newFileName);
                         } catch (IOException e) {
@@ -296,10 +299,13 @@ public class JourneyImport {
 
 
     private static void searchAndRenameFilesInZip(String oldFileName, String newFileName) throws IOException,SecurityException {
+
         Path newNameFlePath;
         Path oldNameFilePath;
         String oldFileNameWithSeperator = File.separator + oldFileName;
         String newFileNameWithSeperator = File.separator + newFileName;
+        newFileNameslist = new ArrayList<>();
+
         //using java nio library's FileSystem for renaming files
         Path zipFilePath = Paths.get(ZIP_FILE_PATH);
 
@@ -327,6 +333,7 @@ public class JourneyImport {
                     oldNameFilePath = zipFS.getPath(oldFileNameWithSeperator);
                     newNameFlePath = zipFS.getPath(newFileNameWithSeperator);
 
+                    //if an entry with the same name as oldFileName exists
                     if (zipEntryFile.getName().equals(oldFileName)) {
 
                         Files.move(oldNameFilePath, newNameFlePath);
@@ -411,12 +418,13 @@ public class JourneyImport {
         journeyZipFile = new ZipFile(ZIP_FILE_PATH);
         zipEntries = journeyZipFile.entries();
         System.out.println("start appending");
+        //loop through the entries
         while (zipEntries.hasMoreElements()) {
 
             ZipEntry entry = zipEntries.nextElement();
             String entryName = new File(entry.getName()).getName();
             ZipEntry newEntry = new ZipEntry("media/photos/" + entryName);
-            if(entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")   ) {
+            if(entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
                 System.out.println("append: " + entryName);
                 try {
                     append.putNextEntry(newEntry);
@@ -432,7 +440,6 @@ public class JourneyImport {
                 }
             }
         }
-        System.out.println("end appending");
         append.closeEntry();
 
         // now append xml
@@ -444,6 +451,7 @@ public class JourneyImport {
 
         // close
        append.close();
+       System.out.println("end appending");
        journeyZipFile.close();
 
 
