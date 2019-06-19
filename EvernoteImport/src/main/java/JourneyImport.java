@@ -7,16 +7,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.*;
 import java.math.BigInteger;
-import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
 
 public class JourneyImport {
-//   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
-//   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
-   private static final String ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
-    private static final String outputPath = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey_import.zip";
+   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
+//   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
+//    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
+    private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\diaro_journey_import.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
 
@@ -94,6 +93,10 @@ public class JourneyImport {
         }
     };
 
+    /**
+     *  run the code
+     * @param args no arguments
+     */
     public static void main(String[] args) {
         try {
 
@@ -107,8 +110,13 @@ public class JourneyImport {
         }
     }
 
+    /**
+     * This method reads the journey zip and creates a list with String json.
+     * @throws IOException
+     * @throws SecurityException
+     */
     private static void readZipFileAndCreateListOfJson() throws IOException,SecurityException {
-        journeyZipFile = new ZipFile(ZIP_FILE_PATH);
+        journeyZipFile = new ZipFile(INPUT_ZIP_FILE_PATH);
         zipEntries = journeyZipFile.entries();
         while (zipEntries.hasMoreElements()) {
             ZipEntry entry = zipEntries.nextElement();
@@ -126,6 +134,12 @@ public class JourneyImport {
         journeyZipFile.close();
     }
 
+    /**
+     * <p>This method collects all the variable required for the
+     * import from listOfEntriesAsJson and adds them in the corresponding
+     * list of Diaro Java Objects
+     * </p>
+     */
     private static void collectVariablesForList() {
 
         //initializing the list
@@ -287,17 +301,24 @@ public class JourneyImport {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                        Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
+                        attachmentList.add(attachment);
                     }
 
-                    Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
-                    attachmentList.add(attachment);
+
                 }
 
             }
         }
     }
 
-
+    /**
+     * searches the attachment through the zip tree and renames it
+     * @param oldFileName old attachment file name format
+     * @param newFileName diaro attachment file name format
+     * @throws IOException is thrown when there is a problem reading or writing on zip.
+     * @throws SecurityException is thrown if the permissions does not allow reading or writing of zip.
+     */
     private static void searchAndRenameFilesInZip(String oldFileName, String newFileName) throws IOException,SecurityException {
 
         Path newNameFlePath;
@@ -307,10 +328,10 @@ public class JourneyImport {
         newFileNameslist = new ArrayList<>();
 
         //using java nio library's FileSystem for renaming files
-        Path zipFilePath = Paths.get(ZIP_FILE_PATH);
+        Path zipFilePath = Paths.get(INPUT_ZIP_FILE_PATH);
 
         //open an input stream to rename Files
-        InputStream theFile = new FileInputStream(ZIP_FILE_PATH);
+        InputStream theFile = new FileInputStream(INPUT_ZIP_FILE_PATH);
         ZipInputStream stream = new ZipInputStream(theFile);
 
         FileSystem zipFS = FileSystems.newFileSystem(zipFilePath,null);
@@ -327,7 +348,7 @@ public class JourneyImport {
                 File zipEntryFile = new File(zipEntry.getName());
                 String zipEntryParent = zipEntryFile.getParent();
 
-                //if the parent dir does not exist
+                //if present in root
                 if (zipEntryParent == null) {
 
                     oldNameFilePath = zipFS.getPath(oldFileNameWithSeperator);
@@ -339,12 +360,13 @@ public class JourneyImport {
                         Files.move(oldNameFilePath, newNameFlePath);
                         System.out.println(oldFileName + "File successfully renamed to" + newFileName);
                     }
-
+                    //if present in a dir or sub dir
                 } else {
 
                     oldNameFilePath = zipFS.getPath(zipEntryParent + oldFileNameWithSeperator);
                     newNameFlePath = zipFS.getPath(zipEntryParent + newFileNameWithSeperator);
 
+                    //if an entry with the same path as oldFileName exists
                     if (zipEntryFile.getPath().equals(zipEntryParent+ oldFileNameWithSeperator)) {
 
                         Files.move(oldNameFilePath, newNameFlePath);
@@ -361,6 +383,9 @@ public class JourneyImport {
 
     }
 
+    /** generate xml for Diaro
+     * @return xml Document
+     */
     private static Document generateXmlForDiaro(){
         Document createdXmlDocument = DocumentHelper.createDocument();
         //create the root element of the document
@@ -410,23 +435,33 @@ public class JourneyImport {
 
     }
 
+    /** creates a new zip,saves the images in the required Diaro folders and writes the xml
+     *
+     * @param createdDocument created xml document for Diaro
+     * @throws IOException is thrown when there is a problem reading or writing on zip.
+     * @throws SecurityException is thrown if the permissions does not allow reading or writing of zip.
+     */
     private static void writeXmlAndImagesToZip(Document createdDocument) throws IOException,SecurityException {
-        ZipOutputStream append = new ZipOutputStream(new FileOutputStream(outputPath));
+        //creating new zipOutputStream
+        ZipOutputStream append = new ZipOutputStream(new FileOutputStream(OUTPUT_ZIP_FILE_PATH));
         //increase the buffer as required
         byte[] buffer = new byte[512];
-
-        journeyZipFile = new ZipFile(ZIP_FILE_PATH);
+        journeyZipFile = new ZipFile(INPUT_ZIP_FILE_PATH);
         zipEntries = journeyZipFile.entries();
         System.out.println("start appending");
         //loop through the entries
         while (zipEntries.hasMoreElements()) {
 
             ZipEntry entry = zipEntries.nextElement();
+            //creating entryName String object to get the filename without path
             String entryName = new File(entry.getName()).getName();
             ZipEntry newEntry = new ZipEntry("media/photos/" + entryName);
+
+            //checking for compatible attachments
             if(entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
                 System.out.println("append: " + entryName);
                 try {
+                    //copying the attachments from old zip to new zip
                     append.putNextEntry(newEntry);
                     InputStream in = journeyZipFile.getInputStream(entry);
                     while (0 < in.available()) {
@@ -457,6 +492,11 @@ public class JourneyImport {
 
     }
 
+    /** converts icon code to name
+     * @param icon weather icon code
+     * @param weatherIconToNameMap map with weather code and name
+     * @return weather icon name
+     */
     private static String iconCodeToName(String icon, Map<String, String> weatherIconToNameMap){
         if(!icon.isEmpty() && weatherIconToNameMap.containsKey(icon)){
             return weatherIconToNameMap.get(icon);
@@ -464,6 +504,13 @@ public class JourneyImport {
         return "";
     }
 
+    /** <p>checks if the jsonObject is null
+     * or if it is a String, is it empty or null
+     *
+     *  @param rootJsonObject rootJsonObject
+     * @param key key for rootJsonObject
+     * @return
+     */
     private static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
         if(rootJsonObject.get(key) instanceof String) {
             return rootJsonObject.isNull(key) || rootJsonObject.getString(key).isEmpty();
