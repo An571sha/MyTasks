@@ -15,7 +15,7 @@ public class EvernoteImport {
     private static Document xmlDocument;
 
     //input and output paths
-    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\evernote_varnos.enex";
+    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\sample.enex";
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_evernote_import.zip";
     private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
 
@@ -129,8 +129,8 @@ public class EvernoteImport {
             //get all Locations
             // using diaro.Entry.concatLatLng to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
-                String latitude = node.selectSingleNode(LATITUDE).getText();
-                String longitude = node.selectSingleNode(LONGITUDE).getText();
+                String latitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LATITUDE).getText()));
+                String longitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LONGITUDE).getText()));
                 String location_title = (Entry.concatLatLng(latitude, longitude));
 
                 //mapping every uid to the address
@@ -208,7 +208,7 @@ public class EvernoteImport {
                             fileNameSet.add(fileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,fileName,decoded);
                         }else{
-                            String newFileName = Entry.setNewFileName(fileName);
+                            String newFileName = Entry.generateNewFileName(fileName);
                             fileNameSet.add(newFileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,newFileName,decoded);
                         }

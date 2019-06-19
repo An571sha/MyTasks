@@ -167,28 +167,24 @@ public class Entry {
     }
 
     public static String concatLatLng(String lat, String lng){
-        try {
-            int latDotIndex = lat.indexOf(".");
-            lat = lat.substring(0, latDotIndex) + lat.substring(latDotIndex, latDotIndex + 7);
-            int lngDotIndex = lng.indexOf(".");
-            lng = lng.substring(0, lngDotIndex) + lng.substring(lngDotIndex, lngDotIndex + 7);
-            return String.format("(%s,%s)", lat, lng);
-
-        }catch(IndexOutOfBoundsException e){
-            e.printStackTrace();
-        }
-        return String.format("(%s,%s)", lat, lng);
+        return String.format("(%s , %s)", lat, lng);
     }
 
 
-    /** creates a new FileName if duplicates are found
+    /** creates a new FileName
      * @param fileNameString name of the file in attachment
+     * @param firstAdditional additional string
+     * @param secondAdditional additional string
      * @return the newString
      */
-    public static String setNewFileName(String fileNameString) {
+    public static String generateNewFileName(String fileNameString, String firstAdditional, String secondAdditional) {
         String extension = FilenameUtils.getExtension(fileNameString);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
-        return timeStamp + "." + extension;
+        return timeStamp + firstAdditional + secondAdditional + "." + extension;
+    }
+
+    public static String generateNewFileName(String fileNameString) {
+      return generateNewFileName(fileNameString,"","");
     }
 
     public static void generateEntryTable(Entry entry , Element entriesRow , String folder_uid){

@@ -23,10 +23,10 @@ public class Location {
 
     public static void generateLocationTable(Location location , Element row ) {
         row.addElement(Entry.KEY_UID).addText(location.location_uid);
-        row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(location.title);
-        row.addElement(Entry.KEY_ENTRY_LOCATION_ADDRESS).addText(location.address);
-        row.addElement(Entry.KEY_ENTRY_LOCATION_LATITUDE).addText(location.latitiude);
-        row.addElement(Entry.KEY_ENTRY_LOCATION_LONGITUDE).addText(location.longitude);
+        if(!location.title.isEmpty()) row.addElement(Entry.KEY_ENTRY_LOCATION_NAME).addText(location.title);
+        if(!location.address.isEmpty()) row.addElement(Entry.KEY_ENTRY_LOCATION_ADDRESS).addText(location.address);
+        if(!location.latitiude.isEmpty()) row.addElement(Entry.KEY_ENTRY_LOCATION_LATITUDE).addText(location.latitiude);
+        if(!location.longitude.isEmpty()) row.addElement(Entry.KEY_ENTRY_LOCATION_LONGITUDE).addText(location.longitude);
         row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(location.zoom);
     }
 

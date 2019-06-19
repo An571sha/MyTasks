@@ -1,13 +1,12 @@
 import diaro.*;
 import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.file.*;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.zip.*;
 
@@ -56,19 +55,10 @@ public class JourneyImport {
     private static String FOLDER_COLOR = "#F0B913";
     private static String DEFAULT_ZOOM = "11";
 
-    //xml table names
-    private static String diaro_folders = "diaro_folders";
-    private static String diaro_entries = "diaro_entries";
-    private static String diaro_attachments = "diaro_attachments";
-    private static String diaro_tags = "diaro_tags";
-    private static String diaro_locations = "diaro_locations";
-
     //iterator for zipEntries
     private static  Enumeration<? extends ZipEntry> zipEntries;
     private static  ZipFile journeyZipFile;
-    private static  List<String> newFileNameslist;
 
-    private static Folder folder;
 
     //weather icon info
     private static HashMap<String,String> iconAndNameMap = new HashMap<String,String>() {
@@ -153,12 +143,9 @@ public class JourneyImport {
         uidForEachLocation = new LinkedHashMap<>();
         attachmentsWithNewName = new LinkedHashMap<>();
 
-
-        //creating a new Folder Object
-        folder = new Folder(FOLDER_TITLE, FOLDER_COLOR, FOLDER_UID);
+        int j = 0;
 
         for (String journeyEntry : listOfEntriesAsJson) {
-
             //create new entry JSONObject with entry as root
             JSONObject rootJsonObject;
             try {
@@ -189,33 +176,43 @@ public class JourneyImport {
             //-- collecting location
             String location_uid = "";
             String title = "";
+            String latitude = "";
+            String longitude = "";
             if (!rootJsonObject.isNull(KEY_JOURNEY_LATITUDE) && !rootJsonObject.isNull(KEY_JOURNEY_LONGITUDE)) {
 
-                String latitude = Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE));
-                String longitude = Double.toString(rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE));
+                double lat = rootJsonObject.getDouble(KEY_JOURNEY_LATITUDE);
+                double lng = rootJsonObject.getDouble(KEY_JOURNEY_LONGITUDE);
 
-                //if address is available
-                //check for address in weather
-                //if no address found, display address as {Lat,Lng}
+                //a bug in journey just saves lat and lng as Double.MAX_VALUE(1.7976931348623157E308)
+                // do not skip this check
+                if(lat != 1.7976931348623157E308 && lng != 1.7976931348623157E308) {
 
-                if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_ADDRESS)) {
-                    title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
+                    latitude = String.format("%.5f", lat);
+                    longitude = String.format("%.5f", lng);
 
-                } else if (!areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_PLACE)) {
-                    title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
+                    //if address is available
+                    //check for address in weather
+                    //if no address found, display address as {Lat,Lng}
+                    if (!areNullAndEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
+                        title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                } else {
-                    title = Entry.concatLatLng(latitude, longitude);
+                    } else if (!areNullAndEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
+                        title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
+
+                    } else if (!latitude.isEmpty() && !longitude.isEmpty()) {
+                        title = Entry.concatLatLng(latitude, longitude);
+                    }
+
+                    //mapping every uid to the title
+                    if (!uidForEachLocation.containsKey(title)) {
+                        uidForEachLocation.put(title, Entry.generateRandomUid());
+                    }
+
+                    location_uid = uidForEachLocation.get(title);
+
+                    Location location = new Location(location_uid, latitude, longitude, title, title, DEFAULT_ZOOM);
+                    locationsList.add(location);
                 }
-
-                //mapping every uid to the title
-                if (!uidForEachLocation.containsKey(title)) {
-                    uidForEachLocation.put(title, Entry.generateRandomUid()); }
-
-                location_uid = uidForEachLocation.get(title);
-
-                Location location = new Location(location_uid, latitude, longitude, title, title, DEFAULT_ZOOM);
-                locationsList.add(location);
             }
 
             //-- collecting weather info
@@ -292,10 +289,11 @@ public class JourneyImport {
                     attachment_uid = Entry.generateRandomUid();
                     fileName = photosArray.getString(i);
                     //generate new File Name
-                    String newFileName = Entry.setNewFileName(fileName);
+                    //adding the i and j to prevent duplicate entries generated during
+                    //the same time span of ms
+                    String newFileName = Entry.generateNewFileName(fileName, String.valueOf(i), String.valueOf(j));
 
                     //check for compatibility
-
                     if (newFileName.endsWith(".png")|| newFileName.endsWith(".gif")|| newFileName.endsWith(".jpg")|| newFileName.endsWith(".jpeg")){
                        Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
                         attachmentList.add(attachment);
@@ -305,6 +303,8 @@ public class JourneyImport {
                         }
                     }
                 }
+//              incrementing j for additional String in fileName
+                j++;
             }
         }
     }
