@@ -15,9 +15,9 @@ public class EvernoteImport {
     private static Document xmlDocument;
 
     //input and output paths
-    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
-    private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\test.zip";
-    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\DiaroImport.xml";
+    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\evernote_varnos.enex";
+    private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_evernote_import.zip";
+    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
 
     //evernote enex nodes
     private static String NOTES = "/en-export/note";
@@ -31,13 +31,6 @@ public class EvernoteImport {
     private static String MIME = "mime";
     private static String DATA = "data";
     private static String TAGS = "/en-export/note/tag";
-
-    //xml table names
-    private static String diaro_folders = "diaro_folders";
-    private static String diaro_entries = "diaro_entries";
-    private static String diaro_attachments = "diaro_attachments";
-    private static String diaro_tags = "diaro_tags";
-    private static String diaro_locations = "diaro_locations";
 
     private static String DEFAULT_ZOOM = "11";
 
@@ -64,7 +57,7 @@ public class EvernoteImport {
         File inputFile = new File(ENEX_DOCUMENT_PATH);
         enexDocument =  parseXml(inputFile);
         collectVariables(enexDocument);
-        xmlDocument = generateXml();
+        xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
         createZipOrXmlFile(xmlDocument);
     }
 
@@ -232,80 +225,6 @@ public class EvernoteImport {
     }
 
 
-    /** this file creates a new xml document by looping through all the lists of Datatypes and
-     * generating the corresponding row
-     * @return xmlDocument
-     */
-    private static Document generateXml(){
-        Document createdXmlDocument = DocumentHelper.createDocument();
-        //create the root element of the document
-        Element root = createdXmlDocument.addElement("data").addAttribute("version", "2");
-
-        //adding folders table
-        // generate folder table. All the folders have a constant
-        // uid, title and colour. As evernote does not provide any data regarding folders.
-        Element folderRoot = root.addElement("table").addAttribute("title", diaro_folders);
-        Element folderRow =  folderRoot.addElement("r");
-        folderRow.addElement(Entry.KEY_UID).addText(FOLDER_UID);
-        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
-        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
-
-        //adding tags table
-        Element tagRoot = generateTableTag(TAG, diaro_tags,root);
-        for(Map.Entry<String,String> tag : uidForEachTag.entrySet() ){
-
-            assert tagRoot != null;
-            Element tagRow = tagRoot.addElement("r");
-            Tags.generateTagTable(tag,tagRow);
-        }
-
-        //adding locations table
-        Element locationRoot = generateTableTag(LATITUDE, diaro_locations,root);
-        for(Location location : locationsList){
-
-            assert locationRoot != null;
-            Element locationRow = locationRoot.addElement("r");
-            Location.generateLocationTable(location,locationRow);
-        }
-
-        //adding entries table
-        Element entryRoot = root.addElement("table").addAttribute("title", diaro_entries);
-        for(Entry entry: entriesList){
-            Element entriesRow = entryRoot.addElement("r");
-            Entry.generateEntryTable(entry,entriesRow,FOLDER_UID);
-        }
-
-        //adding attachments table
-        Element attachmentsRoot = generateTableTag(RESOURCE, diaro_attachments,root);
-        for(Attachment attachment: attachmentList){
-
-            assert attachmentsRoot != null;
-            Element attachmentRow =  attachmentsRoot.addElement("r");
-            Attachment.generateAttachmentTable(attachment,attachmentRow);
-
-        }
-        return createdXmlDocument;
-    }
-
-    /**
-     * this methods generates table tag for each xml elements in xml.This is only generated when the
-     * <p>
-     * equivalent node exists in the nodesList
-
-     * @param s1 Name of the node inside enex document
-     * @param s2 Name of the table title inside xml document
-     * @param root Root element of the document
-     * @return table
-     */
-    private static Element generateTableTag(String s1, String s2, Element root){
-        for (Node node : nodeList) {
-            if(node.selectSingleNode(s1) != null){
-                return root.addElement("table").addAttribute("title", s2);
-            }
-        }
-        return null;
-    }
-
     /**
      * this method creates a zip file for the given xml document and saves the images in media/photos
      * <p>
@@ -331,7 +250,7 @@ public class EvernoteImport {
                     assert zipOutputStream != null;
                     fileName = attachment.filename;
                     decoded = attachment.data;
-                    ZipEntry imageOutputStream = new ZipEntry("media/photos/" + fileName);
+                    ZipEntry imageOutputStream = new ZipEntry("media/photo/" + fileName);
                     zipOutputStream.putNextEntry(imageOutputStream);
                     zipOutputStream.write(decoded);
 

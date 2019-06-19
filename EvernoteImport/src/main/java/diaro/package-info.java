@@ -2,7 +2,7 @@
 /**
  * Contains classes used to produce the XML output for the Diaro Import services.
  * <p>
- * These are Diaro Object Types and contain some helper methods.
+ * These are Diaro Object Types and contain some helper methods for generating XML.
  *
  * @author Animesh
  * @version 1.0

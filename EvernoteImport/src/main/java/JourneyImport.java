@@ -12,9 +12,9 @@ import java.util.*;
 import java.util.zip.*;
 
 public class JourneyImport {
-   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
+ //  private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
 //   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
-//    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
+    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
     private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\diaro_journey_import.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
@@ -47,6 +47,7 @@ public class JourneyImport {
     //LinkedHashMaps for Tags and Locations
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForEachLocation;
+    private static HashMap<String, String> attachmentsWithNewName;
 
 
     //Journey folder
@@ -102,7 +103,7 @@ public class JourneyImport {
 
             readZipFileAndCreateListOfJson();
             collectVariablesForList();
-            xmlDocument = generateXmlForDiaro();
+            xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
             writeXmlAndImagesToZip(xmlDocument);
 
         } catch (IOException | SecurityException e) {
@@ -150,6 +151,7 @@ public class JourneyImport {
 
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
+        attachmentsWithNewName = new LinkedHashMap<>();
 
 
         //creating a new Folder Object
@@ -295,144 +297,16 @@ public class JourneyImport {
                     //check for compatibility
 
                     if (newFileName.endsWith(".png")|| newFileName.endsWith(".gif")|| newFileName.endsWith(".jpg")|| newFileName.endsWith(".jpeg")){
-                    //change the corresponding file name in zip if it exists
-                        try {
-                            searchAndRenameFilesInZip(fileName, newFileName);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
+                       Attachment attachment = new Attachment(attachment_uid,entry_uid,type,newFileName);
                         attachmentList.add(attachment);
-                    }
-
-
-                }
-
-            }
-        }
-    }
-
-    /**
-     * searches the attachment through the zip tree and renames it
-     * @param oldFileName old attachment file name format
-     * @param newFileName diaro attachment file name format
-     * @throws IOException is thrown when there is a problem reading or writing on zip.
-     * @throws SecurityException is thrown if the permissions does not allow reading or writing of zip.
-     */
-    private static void searchAndRenameFilesInZip(String oldFileName, String newFileName) throws IOException,SecurityException {
-
-        Path newNameFlePath;
-        Path oldNameFilePath;
-        String oldFileNameWithSeperator = File.separator + oldFileName;
-        String newFileNameWithSeperator = File.separator + newFileName;
-        newFileNameslist = new ArrayList<>();
-
-        //using java nio library's FileSystem for renaming files
-        Path zipFilePath = Paths.get(INPUT_ZIP_FILE_PATH);
-
-        //open an input stream to rename Files
-        InputStream theFile = new FileInputStream(INPUT_ZIP_FILE_PATH);
-        ZipInputStream stream = new ZipInputStream(theFile);
-
-        FileSystem zipFS = FileSystems.newFileSystem(zipFilePath,null);
-
-        ZipEntry zipEntry;
-
-        //if the attachment name exists in zip
-        while ((zipEntry = stream.getNextEntry()) != null) {
-
-            //if the zipEntry exists in a dir
-            if (!zipEntry.isDirectory()) {
-
-                //create a new file object for that zipEntry
-                File zipEntryFile = new File(zipEntry.getName());
-                String zipEntryParent = zipEntryFile.getParent();
-
-                //if present in root
-                if (zipEntryParent == null) {
-
-                    oldNameFilePath = zipFS.getPath(oldFileNameWithSeperator);
-                    newNameFlePath = zipFS.getPath(newFileNameWithSeperator);
-
-                    //if an entry with the same name as oldFileName exists
-                    if (zipEntryFile.getName().equals(oldFileName)) {
-
-                        Files.move(oldNameFilePath, newNameFlePath);
-                        System.out.println(oldFileName + "File successfully renamed to" + newFileName);
-                    }
-                    //if present in a dir or sub dir
-                } else {
-
-                    oldNameFilePath = zipFS.getPath(zipEntryParent + oldFileNameWithSeperator);
-                    newNameFlePath = zipFS.getPath(zipEntryParent + newFileNameWithSeperator);
-
-                    //if an entry with the same path as oldFileName exists
-                    if (zipEntryFile.getPath().equals(zipEntryParent+ oldFileNameWithSeperator)) {
-
-                        Files.move(oldNameFilePath, newNameFlePath);
-                        System.out.println(oldFileName + "File successfully renamed to" + newFileName);
-
+                        //add the old name and the new name in a list
+                        if (!attachmentsWithNewName.containsKey(fileName)) {
+                            attachmentsWithNewName.put(fileName,newFileName);
+                        }
                     }
                 }
             }
         }
-        //close the streams
-        stream.close();
-        zipFS.close();
-
-
-    }
-
-    /** generate xml for Diaro
-     * @return xml Document
-     */
-    private static Document generateXmlForDiaro(){
-        Document createdXmlDocument = DocumentHelper.createDocument();
-        //create the root element of the document
-        Element root = createdXmlDocument.addElement("data").addAttribute("version", "2");
-
-        //adding folders table
-        // generate folder table. All the folders have a constant
-        // uid, title and colour. As evernote does not provide any data regarding folders.
-        Element folderRoot = root.addElement("table").addAttribute("title", diaro_folders);
-        Element folderRow =  folderRoot.addElement("r");
-        folderRow.addElement(Entry.KEY_UID).addText(FOLDER_UID);
-        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_TITLE).addText(FOLDER_TITLE);
-        folderRow.addElement(Entry.KEY_ENTRY_FOLDER_COLOR).addText(FOLDER_COLOR);
-
-        //adding tags table
-        Element tagRoot =  root.addElement("table").addAttribute("title", diaro_tags);
-        for(Map.Entry<String,String> tag : uidForEachTag.entrySet() ){
-            assert tagRoot != null;
-            Element tagRow = tagRoot.addElement("r");
-            Tags.generateTagTable(tag,tagRow);
-        }
-        //adding location table
-        Element locationRoot =  root.addElement("table").addAttribute("title", diaro_locations);
-        for(Location location : locationsList){
-
-            assert locationRoot != null;
-            Element locationRow = locationRoot.addElement("r");
-            Location.generateLocationTable(location,locationRow);
-        }
-
-        //adding zipEntries table
-        Element entryRoot = root.addElement("table").addAttribute("title", diaro_entries);
-        for(Entry entry: entriesList){
-            Element entriesRow = entryRoot.addElement("r");
-            Entry.generateEntryTable(entry,entriesRow,FOLDER_UID);
-        }
-        //adding attachments table
-        Element attachmentsRoot = root.addElement("table").addAttribute("title", diaro_attachments);
-        for(Attachment attachment: attachmentList){
-
-            assert attachmentsRoot != null;
-            Element attachmentRow =  attachmentsRoot.addElement("r");
-            Attachment.generateAttachmentTable(attachment,attachmentRow);
-
-        }
-        return createdXmlDocument;
-
     }
 
     /** creates a new zip,saves the images in the required Diaro folders and writes the xml
@@ -451,15 +325,22 @@ public class JourneyImport {
         System.out.println("start appending");
         //loop through the entries
         while (zipEntries.hasMoreElements()) {
-
+            ZipEntry newEntry;
             ZipEntry entry = zipEntries.nextElement();
             //creating entryName String object to get the filename without path
             String entryName = new File(entry.getName()).getName();
-            ZipEntry newEntry = new ZipEntry("media/photos/" + entryName);
 
+            //get the attachment name from list
+            if(attachmentsWithNewName.containsKey(entryName)) {
+                //create a new entry with the new attachment name
+                newEntry = new ZipEntry("media/photo/" + attachmentsWithNewName.get(entryName));
+            }else{
+
+                newEntry = new ZipEntry("media/photo/" + entryName);
+            }
             //checking for compatible attachments
             if(entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
-                System.out.println("append: " + entryName);
+                System.out.println("append: " + newEntry);
                 try {
                     //copying the attachments from old zip to new zip
                     append.putNextEntry(newEntry);
@@ -509,7 +390,7 @@ public class JourneyImport {
      *
      *  @param rootJsonObject rootJsonObject
      * @param key key for rootJsonObject
-     * @return
+     * @return boolean
      */
     private static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
         if(rootJsonObject.get(key) instanceof String) {
