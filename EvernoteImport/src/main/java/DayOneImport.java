@@ -1,7 +1,9 @@
+import com.google.gson.Gson;
 import diaro.Attachment;
 import diaro.Entry;
 import diaro.Location;
 import diaro.Tags;
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -54,9 +56,14 @@ public class DayOneImport {
     public static void main(String[] args){
         try {
             dayOneEntriesJson = getEntries(DAY_ONE_ZIP);
+            System.out.println("Is a valid JSON ? :  " + isJSONValid(dayOneEntriesJson));
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        collectVariablesForList(dayOneEntriesJson);
+
     }
 
     public static String getEntries(String zipFile) throws IOException {
@@ -78,7 +85,7 @@ public class DayOneImport {
         return json;
     }
 
-    private static void collectVariablesForList(String dayOneEntriesJson) throws JSONException {
+    private static void collectVariablesForList(String dayOneEntriesJson){
 
         //initializing the list
         entriesList = new ArrayList<>();
@@ -89,11 +96,17 @@ public class DayOneImport {
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
 
-        JSONObject objAtIndex;
+        //escape String
 
-        JSONObject rootJsonObject = new JSONObject(dayOneEntriesJson);
+        JSONObject rootJsonObject = new JSONObject();
+        try {
+            rootJsonObject = new JSONObject(dayOneEntriesJson);
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
         JSONArray entries = rootJsonObject.getJSONArray(KEY_DAYONE_ENTRIES);
         //check if entries exists
+        JSONObject objAtIndex;
         if(!rootJsonObject.isNull(KEY_DAYONE_ENTRIES)){
             for(int i = 0; i < entries.length(); i++) {
                 //create an Object at index
@@ -107,13 +120,17 @@ public class DayOneImport {
                 if(objAtIndex.optJSONArray(KEY_DAYONE_ENTRIES_TAGS)!=null){
                     JSONArray tags = objAtIndex.optJSONArray(KEY_DAYONE_ENTRIES_TAGS);
                     for(int j = 0; j < tags.length(); j++) {
+
                         tag_uid = Entry.generateRandomUid();
-                        tag_title = tags.getString(i);
-                        if (!uidForEachTag.containsKey(tag_title)) {
-                            uidForEachTag.put(tag_title, tag_uid);
+
+                        if(tags.getString(j)!= null && !tags.getString(j).isEmpty()) {
+                            tag_title = tags.getString(j);
+                            if (!uidForEachTag.containsKey(tag_title)) {
+                                uidForEachTag.put(tag_title, tag_uid);
+                            }
+                            Tags tag = new Tags(uidForEachTag.get(tag_title), tag_title);
+                            tagsForEntryList.add(tag);
                         }
-                        Tags tag = new Tags(uidForEachTag.get(tag_title), tag_title);
-                        tagsForEntryList.add(tag);
                     }
                 }
 
@@ -131,12 +148,14 @@ public class DayOneImport {
 
 
                     //check for name,country,administrativeArea and placeName
-                    String adminstrativeArea = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_ADMINISTRATIVE_AREA);
+                    String administrativeArea = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_ADMINISTRATIVE_AREA);
                     String placeName = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_PLACE_NAME);
                     String localityName = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_LOCALITY_NAME);
                     String country = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_COUNTRY);
-
-                    String locationTitleValues;
+                    List<String> locationTitleValues = new ArrayList<>(Arrays.asList(administrativeArea,placeName,localityName,country));
+                    System.out.println("b"+locationTitleValues);
+                    locationTitleValues.removeAll(Arrays.asList("",null));
+                    System.out.println("a"+locationTitleValues);
                 }
 
 
@@ -144,6 +163,16 @@ public class DayOneImport {
 
         }
 
+    }
+    //validate JSON
+    private static boolean isJSONValid(String jsonInString) {
+        Gson gson = new Gson();
+        try {
+            gson.fromJson(jsonInString, Object.class);
+            return true;
+        } catch(com.google.gson.JsonSyntaxException ex) {
+            return false;
+        }
     }
 
 
