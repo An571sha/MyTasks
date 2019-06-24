@@ -1,19 +1,19 @@
 import diaro.*;
+import org.apache.commons.lang3.time.StopWatch;
 import org.dom4j.Document;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.*;
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 
 public class JourneyImport {
  //  private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
-//   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
-    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
+   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
+//    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
     private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\diaro_journey_import.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
@@ -95,7 +95,6 @@ public class JourneyImport {
             collectVariablesForList();
             xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
             writeXmlAndImagesToZip(xmlDocument);
-
         } catch (IOException | SecurityException e) {
             e.printStackTrace();
         }
@@ -193,10 +192,10 @@ public class JourneyImport {
                     //if address is available
                     //check for address in weather
                     //if no address found, display address as {Lat,Lng}
-                    if (!areNullAndEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
+                    if (!Entry.areNullAndEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
                         title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                    } else if (!areNullAndEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
+                    } else if (!Entry.areNullAndEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
                         title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
 
                     } else if (!latitude.isEmpty() && !longitude.isEmpty()) {
@@ -221,9 +220,9 @@ public class JourneyImport {
             String weather_description = "";
             String weather_icon = "";
             if (journey_weather != null && !journey_weather.isEmpty()) {
-                if (!areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
-                        !areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
-                        !areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
+                if (!Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
+                        !Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
+                        !Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
 
                     weather_temp = Double.toString(journey_weather.getDouble(KEY_JOURNEY__WEATHER_DEGREE));
                     weather_description = journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
@@ -241,15 +240,15 @@ public class JourneyImport {
             String journey_preview_text = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
             BigInteger journey_date= rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL);
 
-            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
+            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
                 entry_text = journey_text;
             }
 
-            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
+            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
                 entry_title = journey_preview_text;
             }
 
-            if (!areNullAndEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
+            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
                 entry_date = String.valueOf(journey_date);
             }
 
@@ -316,6 +315,8 @@ public class JourneyImport {
      * @throws SecurityException is thrown if the permissions does not allow reading or writing of zip.
      */
     private static void writeXmlAndImagesToZip(Document createdDocument) throws IOException,SecurityException {
+        StopWatch stopwatch = new StopWatch();
+        stopwatch.start();
         //creating new zipOutputStream
         ZipOutputStream append = new ZipOutputStream(new FileOutputStream(OUTPUT_ZIP_FILE_PATH));
         //increase the buffer as required
@@ -369,7 +370,8 @@ public class JourneyImport {
        append.close();
        System.out.println("end appending");
        journeyZipFile.close();
-
+       stopwatch.stop();
+       System.out.println("Time taken on main Thread: " + stopwatch.getTime(TimeUnit.MILLISECONDS));
 
     }
 
@@ -385,22 +387,6 @@ public class JourneyImport {
         return "";
     }
 
-    /** <p>checks if the jsonObject is null
-     * or if it is a String, is it empty or null
-     *
-     *  @param rootJsonObject rootJsonObject
-     * @param key key for rootJsonObject
-     * @return boolean
-     */
-    private static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
-        if(rootJsonObject.get(key) instanceof String) {
-            return rootJsonObject.isNull(key) || rootJsonObject.getString(key).isEmpty();
 
-        } else if(rootJsonObject.get(key) instanceof JSONObject){
-            return rootJsonObject.isNull(key);
-        }
-
-        return false;
-    }
 
 }

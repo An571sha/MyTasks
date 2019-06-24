@@ -14,6 +14,7 @@ import org.dom4j.Element;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.json.JSONObject;
 
 public class Entry {
 
@@ -218,6 +219,23 @@ public class Entry {
         return text.getBytes();
     }
 
+    /** <p>checks if the jsonObject is null
+     * or if it is a String, is it empty or null
+     *
+     *  @param rootJsonObject rootJsonObject
+     * @param key key for rootJsonObject
+     * @return boolean
+     */
+    public static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
+        if(rootJsonObject.get(key) instanceof String) {
+            return rootJsonObject.isNull(key) || rootJsonObject.getString(key).isEmpty();
+
+        } else if(rootJsonObject.get(key) instanceof JSONObject){
+            return rootJsonObject.isNull(key);
+        }
+
+        return false;
+    }
 
 
 
