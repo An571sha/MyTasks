@@ -2,19 +2,14 @@ package diaro;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Random;
 
-//import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.json.JSONObject;
 
 public class Entry {
 
@@ -44,7 +39,7 @@ public class Entry {
 
     public static String dateFormatNormal = "dd/MM/yyyy";
     public static String dateFormatUS = "MM/dd/yy";
-
+    public static String dateFormatDayOne = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     public static String dateFormat = dateFormatUS;
 
 
@@ -160,33 +155,14 @@ public class Entry {
     }
 
     public static long dateToTimeStamp(String date) {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yy");
-        DateTime dt = formatter.parseDateTime(date);
-        DateTime dtNew = dt.plusHours(18);
-
-        return dtNew.getMillis();
+        if (ImportStringUtils.checkDateFormat(date, dateFormat)) {
+            return ImportStringUtils.formatDateToTimeStamp(date, dateFormat);
+        } else if (ImportStringUtils.checkDateFormat(date, dateFormatDayOne)) {
+            return ImportStringUtils.formatDateToTimeStamp(date, dateFormatDayOne);
+        }
+        return 0;
     }
 
-    public static String concatLatLng(String lat, String lng){
-        return String.format("(%s , %s)", lat, lng);
-    }
-
-
-    /** creates a new FileName
-     * @param fileNameString name of the file in attachment
-     * @param firstAdditional additional string
-     * @param secondAdditional additional string
-     * @return the newString
-     */
-    public static String generateNewFileName(String fileNameString, String firstAdditional, String secondAdditional) {
-        String extension = FilenameUtils.getExtension(fileNameString);
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
-        return timeStamp + firstAdditional + secondAdditional + "." + extension;
-    }
-
-    public static String generateNewFileName(String fileNameString) {
-      return generateNewFileName(fileNameString,"","");
-    }
 
     public static void generateEntryTable(Entry entry , Element entriesRow , String folder_uid){
 
@@ -218,31 +194,6 @@ public class Entry {
         String text = document.asXML();
         return text.getBytes();
     }
-
-    /** <p>checks if the jsonObject is null
-     * or if it is a String, is it empty or null
-     *
-     *  @param rootJsonObject rootJsonObject
-     * @param key key for rootJsonObject
-     * @return boolean
-     */
-    public static boolean isNullOrEmpty(JSONObject rootJsonObject, String key){
-        if (rootJsonObject.isNull(key)) {
-            return true;
-        }
-
-        if (rootJsonObject.get(key) instanceof String) {
-            //check if rootJsonObject is a String
-            return rootJsonObject.getString(key).isEmpty();
-
-        }
-
-        return false;
-    }
-
-
-
-
 
 
 }

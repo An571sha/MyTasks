@@ -1,7 +1,4 @@
-import diaro.Attachment;
-import diaro.Entry;
-import diaro.Location;
-import diaro.Tags;
+import diaro.*;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,7 +56,6 @@ public class DayOneImport {
     private static String FOLDER_COLOR = "#F0B913";
     private static String DEFAULT_ZOOM = "11";
 
-    String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     public static void main(String[] args){
         try {
@@ -144,12 +140,12 @@ public class DayOneImport {
                 String title = "";
                 String latitude = "";
                 String longitude = "";
-                if(!Entry.isNullOrEmpty(objAtIndex,KEY_DAYONE_LOCATION)) {
+                if(!ImportStringUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_LOCATION)) {
 
                     JSONObject dayOneLocation = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION);
 
-                    if (!Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LATITUDE) &&
-                            !Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LONGITUDE)) {
+                    if (!ImportStringUtils.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LATITUDE) &&
+                            !ImportStringUtils.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LONGITUDE)) {
                         latitude = dayOneLocation.optString(KEY_DAYONE_LOCATION_LATITUDE);
                         longitude = dayOneLocation.optString(KEY_DAYONE_LOCATION_LONGITUDE);
                     }
@@ -164,20 +160,22 @@ public class DayOneImport {
                     //filtering out the empty values
                     locationTitleValues.removeAll(Arrays.asList("", null));
                     //if locationTitleValues is notEmpty
+                    //looping through all the locationTitleValues
+                    //append the values in a String
                     if (locationTitleValues.size() != 0) {
 
                         for (String locationNameVals : locationTitleValues) {
                             title = title + (",") + (String.join(",", locationNameVals));
                         }
-                        locationTitleValues.clear();
 
+                        locationTitleValues.clear();
                     } else {
 
-                        title = Entry.concatLatLng(latitude, longitude);
+                        title = ImportStringUtils.concatLatLng(latitude, longitude);
                     }
 
                     //if title is not empty
-                    // some lat,lng can be 0, ignore them
+                    //some lat,lng can be 0, ignore them
                     if (!title.isEmpty() && !latitude.equals("0") && !longitude.equals("0")) {
 
                         if (!uidForEachLocation.containsKey(title)) {
@@ -190,6 +188,44 @@ public class DayOneImport {
                         locationsList.add(location);
                     }
                 }
+                //--collect entries
+                String entry_uid = Entry.generateRandomUid();
+                String entry_text = "";
+                String entry_title = "";
+                String entry_date = "";
+
+                //collecting text and titles
+                if(!ImportStringUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TEXT)) {
+                    entry_text = objAtIndex.optString(KEY_DAYONE_TEXT);
+                    entry_title = ImportStringUtils.formatTextAndTitle(entry_text,entry_title)[0];
+                    entry_text = ImportStringUtils.formatTextAndTitle(entry_text,entry_title)[1];
+
+                }
+                if(!ImportStringUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_CREATION_DATE)){
+                    entry_date = objAtIndex.optString(KEY_DAYONE_CREATION_DATE);
+                }
+
+                //looping through all the tags
+                //appending the tags in a String
+                if (tagsForEntryList.size() != 0) {
+                    for (Tags tagsForEntry : tagsForEntryList) {
+                        tag_uid = tag_uid + (",") + (String.join(",", tagsForEntry.tagsId));
+                    }
+                    tag_uid = tag_uid + (",");
+                    System.out.println(tag_uid);
+                }
+                Entry entry = new Entry(
+                        entry_uid,
+                        entry_date,
+                        entry_title,
+                        entry_text,
+                        FOLDER_UID,
+                        location_uid,
+                        tag_uid
+                );
+                entriesList.add(entry);
+                //clear the list
+                tagsForEntryList.clear();
 
             }
 
