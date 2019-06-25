@@ -52,9 +52,18 @@ public class DayOneImport {
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForEachLocation;
 
+
+    //Day One folder
+    private static String FOLDER_UID = Entry.generateRandomUid();
+    private static String FOLDER_TITLE = "DayOne";
+    private static String FOLDER_COLOR = "#F0B913";
+    private static String DEFAULT_ZOOM = "11";
+
+    String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
     public static void main(String[] args){
         try {
-            dayOneEntriesJson = getJsonEntries(DAY_ONE_ZIP);
+            dayOneEntriesJson = getJson(DAY_ONE_ZIP);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -64,7 +73,7 @@ public class DayOneImport {
 
     }
 
-    public static String getJsonEntries(String zipFile) throws IOException {
+    public static String getJson(String zipFile) throws IOException {
         String json = "";
         ZipFile dayOneZip = new ZipFile(zipFile);
         //enumerate though zip to find the json file
@@ -94,8 +103,7 @@ public class DayOneImport {
         uidForEachLocation = new LinkedHashMap<>();
 
         //escape String
-
-        JSONObject rootJsonObject = new JSONObject();
+         JSONObject rootJsonObject = new JSONObject();
         try {
             rootJsonObject = new JSONObject(dayOneEntriesJson);
         }catch (JSONException e){
@@ -137,9 +145,9 @@ public class DayOneImport {
                 String latitude = "";
                 String longitude = "";
                 if(!Entry.isNullOrEmpty(objAtIndex,KEY_DAYONE_LOCATION)) {
-                    
+
                     JSONObject dayOneLocation = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION);
-                    
+
                     if (!Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LATITUDE) &&
                             !Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LONGITUDE)) {
                         latitude = dayOneLocation.optString(KEY_DAYONE_LOCATION_LATITUDE);
@@ -151,15 +159,37 @@ public class DayOneImport {
                     String placeName = dayOneLocation.optString(KEY_DAYONE_LOCATION_PLACE_NAME);
                     String localityName = dayOneLocation.optString(KEY_DAYONE_LOCATION_LOCALITY_NAME);
                     String country = dayOneLocation.optString(KEY_DAYONE_LOCATION_COUNTRY);
-                    List<String> locationTitleValues = new ArrayList<>(Arrays.asList(administrativeArea,placeName,localityName,country));
-                    locationTitleValues.removeAll(Arrays.asList("",null)); //filtering out the empty values
-                    if(locationTitleValues.size() != 0){
-                        for(String locationNamevals : locationTitleValues){
-                            title
+
+                    List<String> locationTitleValues = new ArrayList<>(Arrays.asList(administrativeArea, placeName, localityName, country));
+                    //filtering out the empty values
+                    locationTitleValues.removeAll(Arrays.asList("", null));
+                    //if locationTitleValues is notEmpty
+                    if (locationTitleValues.size() != 0) {
+
+                        for (String locationNameVals : locationTitleValues) {
+                            title = title + (",") + (String.join(",", locationNameVals));
                         }
+                        locationTitleValues.clear();
+
+                    } else {
+
+                        title = Entry.concatLatLng(latitude, longitude);
+                    }
+
+                    //if title is not empty
+                    // some lat,lng can be 0, ignore them
+                    if (!title.isEmpty() && !latitude.equals("0") && !longitude.equals("0")) {
+
+                        if (!uidForEachLocation.containsKey(title)) {
+                            uidForEachLocation.put(title, Entry.generateRandomUid());
+                        }
+
+                        location_uid = uidForEachLocation.get(title);
+
+                        Location location = new Location(location_uid, latitude, longitude, title, title, DEFAULT_ZOOM);
+                        locationsList.add(location);
                     }
                 }
-
 
             }
 
