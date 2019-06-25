@@ -226,12 +226,15 @@ public class Entry {
      * @param key key for rootJsonObject
      * @return boolean
      */
-    public static boolean areNullAndEmpty(JSONObject rootJsonObject, String key){
-        if(rootJsonObject.get(key) instanceof String) {
-            return rootJsonObject.isNull(key) || rootJsonObject.getString(key).isEmpty();
+    public static boolean isNullOrEmpty(JSONObject rootJsonObject, String key){
+        if (rootJsonObject.isNull(key)) {
+            return true;
+        }
 
-        } else if(rootJsonObject.get(key) instanceof JSONObject){
-            return rootJsonObject.isNull(key);
+        if (rootJsonObject.get(key) instanceof String) {
+            //check if rootJsonObject is a String
+            return rootJsonObject.getString(key).isEmpty();
+
         }
 
         return false;

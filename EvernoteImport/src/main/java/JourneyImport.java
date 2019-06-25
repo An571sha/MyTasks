@@ -1,4 +1,5 @@
 import diaro.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.dom4j.Document;
 import org.json.JSONArray;
@@ -106,6 +107,7 @@ public class JourneyImport {
      * @throws SecurityException
      */
     private static void readZipFileAndCreateListOfJson() throws IOException,SecurityException {
+        String json = "";
         journeyZipFile = new ZipFile(INPUT_ZIP_FILE_PATH);
         zipEntries = journeyZipFile.entries();
         while (zipEntries.hasMoreElements()) {
@@ -113,9 +115,7 @@ public class JourneyImport {
             //check if the entry is json object and not a dir
             if (entry.getName().endsWith(".json") && !entry.isDirectory()) {
                 InputStream stream = journeyZipFile.getInputStream(entry);
-                byte[] data = new byte[stream.available()];
-                stream.read(data);
-                String json = new String(data);
+                json = IOUtils.toString(stream, "UTF-8");
                 listOfEntriesAsJson.add(json);
                 stream.close();
             }
@@ -192,10 +192,10 @@ public class JourneyImport {
                     //if address is available
                     //check for address in weather
                     //if no address found, display address as {Lat,Lng}
-                    if (!Entry.areNullAndEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
+                    if (!Entry.isNullOrEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
                         title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                    } else if (!Entry.areNullAndEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
+                    } else if (!Entry.isNullOrEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
                         title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
 
                     } else if (!latitude.isEmpty() && !longitude.isEmpty()) {
@@ -220,9 +220,9 @@ public class JourneyImport {
             String weather_description = "";
             String weather_icon = "";
             if (journey_weather != null && !journey_weather.isEmpty()) {
-                if (!Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
-                        !Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
-                        !Entry.areNullAndEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
+                if (!Entry.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
+                        !Entry.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
+                        !Entry.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
 
                     weather_temp = Double.toString(journey_weather.getDouble(KEY_JOURNEY__WEATHER_DEGREE));
                     weather_description = journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
@@ -240,15 +240,15 @@ public class JourneyImport {
             String journey_preview_text = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
             BigInteger journey_date= rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL);
 
-            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
+            if (!Entry.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
                 entry_text = journey_text;
             }
 
-            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
+            if (!Entry.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
                 entry_title = journey_preview_text;
             }
 
-            if (!Entry.areNullAndEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
+            if (!Entry.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
                 entry_date = String.valueOf(journey_date);
             }
 

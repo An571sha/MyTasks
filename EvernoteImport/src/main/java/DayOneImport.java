@@ -1,9 +1,8 @@
-import com.google.gson.Gson;
 import diaro.Attachment;
 import diaro.Entry;
 import diaro.Location;
 import diaro.Tags;
-import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,8 +54,7 @@ public class DayOneImport {
 
     public static void main(String[] args){
         try {
-            dayOneEntriesJson = getEntries(DAY_ONE_ZIP);
-            System.out.println("Is a valid JSON ? :  " + isJSONValid(dayOneEntriesJson));
+            dayOneEntriesJson = getJsonEntries(DAY_ONE_ZIP);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -66,7 +64,7 @@ public class DayOneImport {
 
     }
 
-    public static String getEntries(String zipFile) throws IOException {
+    public static String getJsonEntries(String zipFile) throws IOException {
         String json = "";
         ZipFile dayOneZip = new ZipFile(zipFile);
         //enumerate though zip to find the json file
@@ -76,9 +74,8 @@ public class DayOneImport {
             //if the file is JSON
             if(zipEntry.getName().endsWith(".json") && !zipEntry.isDirectory()){
                 InputStream stream = dayOneZip.getInputStream(zipEntry);
-                byte[] data = new byte[stream.available()];
-                stream.read(data);
-                json = new String(data);
+                json = IOUtils.toString(stream, "UTF-8");
+                stream.close();
             }
         }
         dayOneZip.close();
@@ -139,23 +136,28 @@ public class DayOneImport {
                 String title = "";
                 String latitude = "";
                 String longitude = "";
-                if(objAtIndex.optJSONObject(KEY_DAYONE_LOCATION) != null) {
-                    if (!Entry.areNullAndEmpty(objAtIndex.getJSONObject(KEY_DAYONE_LOCATION), KEY_DAYONE_LOCATION_LATITUDE) &&
-                            !Entry.areNullAndEmpty(objAtIndex.getJSONObject(KEY_DAYONE_LOCATION), KEY_DAYONE_LOCATION_LONGITUDE)) {
-                        latitude = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_LATITUDE);
-                        longitude = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_LONGITUDE);
+                if(!Entry.isNullOrEmpty(objAtIndex,KEY_DAYONE_LOCATION)) {
+                    
+                    JSONObject dayOneLocation = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION);
+                    
+                    if (!Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LATITUDE) &&
+                            !Entry.isNullOrEmpty(dayOneLocation, KEY_DAYONE_LOCATION_LONGITUDE)) {
+                        latitude = dayOneLocation.optString(KEY_DAYONE_LOCATION_LATITUDE);
+                        longitude = dayOneLocation.optString(KEY_DAYONE_LOCATION_LONGITUDE);
                     }
-
-
-                    //check for name,country,administrativeArea and placeName
-                    String administrativeArea = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_ADMINISTRATIVE_AREA);
-                    String placeName = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_PLACE_NAME);
-                    String localityName = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_LOCALITY_NAME);
-                    String country = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION).optString(KEY_DAYONE_LOCATION_COUNTRY);
+                    //if place Name is present
+                    //get name,country,administrativeArea and placeName
+                    String administrativeArea = dayOneLocation.optString(KEY_DAYONE_LOCATION_ADMINISTRATIVE_AREA);
+                    String placeName = dayOneLocation.optString(KEY_DAYONE_LOCATION_PLACE_NAME);
+                    String localityName = dayOneLocation.optString(KEY_DAYONE_LOCATION_LOCALITY_NAME);
+                    String country = dayOneLocation.optString(KEY_DAYONE_LOCATION_COUNTRY);
                     List<String> locationTitleValues = new ArrayList<>(Arrays.asList(administrativeArea,placeName,localityName,country));
-                    System.out.println("b"+locationTitleValues);
-                    locationTitleValues.removeAll(Arrays.asList("",null));
-                    System.out.println("a"+locationTitleValues);
+                    locationTitleValues.removeAll(Arrays.asList("",null)); //filtering out the empty values
+                    if(locationTitleValues.size() != 0){
+                        for(String locationNamevals : locationTitleValues){
+                            title
+                        }
+                    }
                 }
 
 
@@ -163,16 +165,6 @@ public class DayOneImport {
 
         }
 
-    }
-    //validate JSON
-    private static boolean isJSONValid(String jsonInString) {
-        Gson gson = new Gson();
-        try {
-            gson.fromJson(jsonInString, Object.class);
-            return true;
-        } catch(com.google.gson.JsonSyntaxException ex) {
-            return false;
-        }
     }
 
 
