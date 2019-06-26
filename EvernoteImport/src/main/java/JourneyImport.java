@@ -192,14 +192,14 @@ public class JourneyImport {
                     //if address is available
                     //check for address in weather
                     //if no address found, display address as {Lat,Lng}
-                    if (!ImportStringUtils.isNullOrEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
+                    if (!ImportUtils.isNullOrEmpty(rootJsonObject, KEY_JOURNEY_ADDRESS)) {
                         title = rootJsonObject.getString(KEY_JOURNEY_ADDRESS);
 
-                    } else if (!ImportStringUtils.isNullOrEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
+                    } else if (!ImportUtils.isNullOrEmpty(journey_weather, KEY_JOURNEY__WEATHER_PLACE)) {
                         title = journey_weather.getString(KEY_JOURNEY__WEATHER_PLACE);
 
                     } else if (!latitude.isEmpty() && !longitude.isEmpty()) {
-                        title = ImportStringUtils.concatLatLng(latitude, longitude);
+                        title = ImportUtils.concatLatLng(latitude, longitude);
                     }
 
                     //mapping every uid to the title
@@ -220,9 +220,9 @@ public class JourneyImport {
             String weather_description = "";
             String weather_icon = "";
             if (journey_weather != null && !journey_weather.isEmpty()) {
-                if (!ImportStringUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
-                        !ImportStringUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
-                        !ImportStringUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
+                if (!ImportUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DEGREE) &&
+                        !ImportUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_DESCRIPTION) &&
+                        !ImportUtils.isNullOrEmpty(journey_weather,KEY_JOURNEY__WEATHER_ICON)) {
 
                     weather_temp = Double.toString(journey_weather.getDouble(KEY_JOURNEY__WEATHER_DEGREE));
                     weather_description = journey_weather.getString(KEY_JOURNEY__WEATHER_DESCRIPTION).toLowerCase();
@@ -240,15 +240,15 @@ public class JourneyImport {
             String journey_preview_text = rootJsonObject.getString(KEY_JOURNEY_PREVIEW_TEXT);
             BigInteger journey_date= rootJsonObject.getBigInteger(KEY_JOURNEY_DATE_JOURNAL);
 
-            if (!ImportStringUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
+            if (!ImportUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_TEXT)) {
                 entry_text = journey_text;
             }
 
-            if (!ImportStringUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
+            if (!ImportUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_PREVIEW_TEXT)) {
                 entry_title = journey_preview_text;
             }
 
-            if (!ImportStringUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
+            if (!ImportUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
                 entry_date = String.valueOf(journey_date);
             }
 
@@ -288,9 +288,8 @@ public class JourneyImport {
                     attachment_uid = Entry.generateRandomUid();
                     fileName = photosArray.getString(i);
                     //generate new File Name
-                    //adding the i and j to prevent duplicate entries generated during
-                    //the same time span of ms
-                    String newFileName = ImportStringUtils.generateNewFileName(fileName, String.valueOf(i), String.valueOf(j));
+                    //adding the i and j to prevent duplicate entries generated during the same time span of ms
+                    String newFileName = ImportUtils.generateNewFileName(fileName, String.valueOf(i), String.valueOf(j));
 
                     //check for compatibility
                     if (newFileName.endsWith(".png")|| newFileName.endsWith(".gif")|| newFileName.endsWith(".jpg")|| newFileName.endsWith(".jpeg")){

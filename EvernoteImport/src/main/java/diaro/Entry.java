@@ -56,6 +56,7 @@ public class Entry {
     public String tags;
     public String primary_photo_uid;
 
+   //Evernote
     public Entry(String date, String text, String title, String folder_uid, String location_uid, String tags) {
 
         this.uid = generateRandomUid();
@@ -67,10 +68,9 @@ public class Entry {
         this.location_uid = location_uid;
         this.tags = tags;
         this.primary_photo_uid = "";
-
-
     }
 
+    //Journey
     public Entry(String uid ,String date, String title, String text, String folder_uid, String location_uid, String tags) {
         this.uid = uid;
         this.date = date;
@@ -82,6 +82,19 @@ public class Entry {
         this.weather_temperature = "";
         this.weather_description = "";
         this.weather_icon = "";
+        this.tags = tags;
+        this.primary_photo_uid = "";
+    }
+
+    //DayOne
+    public Entry(String uid ,String tz_offset ,String date, String title, String text, String folder_uid, String location_uid, String tags) {
+        this.uid = uid;
+        this.date = date;
+        this.tz_offset = tz_offset;
+        this.title = title;
+        this.text = text;
+        this.folder_uid = folder_uid;
+        this.location_uid = location_uid;
         this.tags = tags;
         this.primary_photo_uid = "";
     }
@@ -155,10 +168,10 @@ public class Entry {
     }
 
     public static long dateToTimeStamp(String date) {
-        if (ImportStringUtils.checkDateFormat(date, dateFormat)) {
-            return ImportStringUtils.formatDateToTimeStamp(date, dateFormat);
-        } else if (ImportStringUtils.checkDateFormat(date, dateFormatDayOne)) {
-            return ImportStringUtils.formatDateToTimeStamp(date, dateFormatDayOne);
+        if (ImportUtils.checkDateFormat(date, dateFormat)) {
+            return ImportUtils.formatDateToTimeStamp(date, dateFormat);
+        } else if (ImportUtils.checkDateFormat(date, dateFormatDayOne)) {
+            return ImportUtils.formatDateToTimeStamp(date, dateFormatDayOne);
         }
         return 0;
     }

@@ -131,7 +131,7 @@ public class EvernoteImport {
             if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
                 String latitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LATITUDE).getText()));
                 String longitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LONGITUDE).getText()));
-                String location_title = (ImportStringUtils.concatLatLng(latitude, longitude));
+                String location_title = (ImportUtils.concatLatLng(latitude, longitude));
 
                 //mapping every uid to the address
                 if(!uidForEachLocation.containsKey(location_title)) {
@@ -208,7 +208,7 @@ public class EvernoteImport {
                             fileNameSet.add(fileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,fileName,decoded);
                         }else{
-                            String newFileName = ImportStringUtils.generateNewFileName(fileName);
+                            String newFileName = ImportUtils.generateNewFileName(fileName);
                             fileNameSet.add(newFileName);
                             attachment = new Attachment(attachment_uid, entry_uid, type,newFileName,decoded);
                         }

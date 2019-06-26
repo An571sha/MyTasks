@@ -10,8 +10,9 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.zip.ZipEntry;
 
-public class ImportStringUtils {
+public class ImportUtils {
     /**
      * @param date input Date from import
      * @param dateFormat date format for imports
@@ -44,14 +45,12 @@ public class ImportStringUtils {
 
     /** creates a new FileName
      * @param fileNameString name of the file in attachment
-     * @param firstAdditional additional string
-     * @param secondAdditional additional string
      * @return the newString
      */
-    public static String generateNewFileName(String fileNameString, String firstAdditional, String secondAdditional) {
+    public static String generateNewFileName(String fileNameString, String... additionals) {
         String extension = FilenameUtils.getExtension(fileNameString);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new Date());
-        return timeStamp + firstAdditional + secondAdditional + "." + extension;
+        return timeStamp + String.join("",additionals) + "." + extension;
     }
 
     public static String generateNewFileName(String fileNameString) {
@@ -80,11 +79,11 @@ public class ImportStringUtils {
 
     /**
      * @param text entry text
-     * @param title entry title
      * @return String array of formatted tile,text
      */
-    public static String[] formatTextAndTitle(String text , String title){
+    public static String[] formatDayOneTextAndTitle(String text){
         //if EOL is found inside the first 100 chars
+        String title;
         if (text.contains("\n") && text.indexOf("\n") <= 100) {
 
             title = StringUtils.substring(text,0,text.indexOf("\n"));
@@ -103,4 +102,9 @@ public class ImportStringUtils {
             }
         }
     }
+
+    public static boolean checkPhotosExtension(ZipEntry zipEntry){
+        return zipEntry.getName().endsWith(".png") || zipEntry.getName().endsWith(".jpg") || zipEntry.getName().endsWith(".gif") || zipEntry.getName().endsWith(".jpeg");
+    }
+
 }
