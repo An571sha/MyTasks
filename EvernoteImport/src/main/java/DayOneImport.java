@@ -1,6 +1,7 @@
 import diaro.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.dom4j.Document;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,11 +16,13 @@ import java.util.zip.ZipFile;
 
 public class DayOneImport {
     //DayOne Zip
-   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
+    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
 //    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-Journal-photos.zip";
-
+    private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\diaro_dayOne_import.zip";
     //DayOneJson
     private static String dayOneEntriesJson;
+
+    private static Document xmlDocument;
 
     //dayOne Fields
     private static final String KEY_DAYONE_TEXT = "text";
@@ -63,13 +66,15 @@ public class DayOneImport {
 
     public static void main(String[] args){
         try {
+
             dayOneEntriesJson = getJson(DAY_ONE_ZIP);
+            collectVariablesForList(dayOneEntriesJson);
+            xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
+            ImportUtils.writeXmlAndImagesToZip(xmlDocument,DAY_ONE_ZIP,OUTPUT_ZIP_FILE_PATH,photosWithNewName);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        collectVariablesForList(dayOneEntriesJson);
 
     }
 
