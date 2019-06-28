@@ -39,7 +39,6 @@ public class Entry {
 
     public static String dateFormatNormal = "dd/MM/yyyy";
     public static String dateFormatUS = "MM/dd/yy";
-    public static String dateFormatDayOne = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     public static String dateFormat = dateFormatUS;
 
 
@@ -168,26 +167,25 @@ public class Entry {
     }
 
     public static long dateToTimeStamp(String date) {
-        if (ImportUtils.checkDateFormat(date, dateFormat)) {
-            return ImportUtils.formatDateToTimeStamp(date, dateFormat);
-        } else if (ImportUtils.checkDateFormat(date, dateFormatDayOne)) {
-            return ImportUtils.formatDateToTimeStamp(date, dateFormatDayOne);
-        }
-        return 0;
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("MM/dd/yy");
+        DateTime dt = formatter.parseDateTime(date);
+        DateTime dtNew = dt.plusHours(18);
+
+        return dtNew.getMillis();
     }
 
 
     public static void generateEntryTable(Entry entry , Element entriesRow , String folder_uid){
 
         entriesRow.addElement(KEY_UID).addText(entry.uid);
-        entriesRow.addElement(KEY_ENTRY_DATE).addText(entry.date);
-        entriesRow.addElement(KEY_ENTRY_TITLE).addText(entry.title);
-        entriesRow.addElement(KEY_ENTRY_TEXT).addText(entry.text);
-        entriesRow.addElement(KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
-        entriesRow.addElement(KEY_ENTRY_TAGS).addText(entry.tags);
-        entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
-        entriesRow.addElement(KEY_ENTRY_FOLDER_UID).addText(folder_uid);
-        entriesRow.addElement(KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
+        if(!entry.date.isEmpty()) entriesRow.addElement(KEY_ENTRY_DATE).addText(entry.date);
+        if(!entry.title.isEmpty())  entriesRow.addElement(KEY_ENTRY_TITLE).addText(entry.title);
+        if(!entry.text.isEmpty())  entriesRow.addElement(KEY_ENTRY_TEXT).addText(entry.text);
+        if(!entry.location_uid.isEmpty())  entriesRow.addElement(KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
+        if(!entry.tags.isEmpty())  entriesRow.addElement(KEY_ENTRY_TAGS).addText(entry.tags);
+        if(!entry.primary_photo_uid.isEmpty())  entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
+        if(!entry.folder_uid.isEmpty()) entriesRow.addElement(KEY_ENTRY_FOLDER_UID).addText(folder_uid);
+        if(!entry.tz_offset.isEmpty())  entriesRow.addElement(KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
 
         if(entry.weather_icon !=null && !entry.weather_icon.isEmpty()  &&
                 entry.weather_temperature !=null && !entry.weather_temperature.isEmpty() &&

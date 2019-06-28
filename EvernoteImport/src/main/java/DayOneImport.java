@@ -1,23 +1,35 @@
 import diaro.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.dom4j.Document;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystems;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class DayOneImport {
     //DayOne Zip
-    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
-//    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-Journal-photos.zip";
+//    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
+   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-22-DayOne-JSON gestas JP.zip";
+//   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-Journal-photos.zip";
+//   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-All Journals.zip";
     private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\diaro_dayOne_import.zip";
     //DayOneJson
     private static String dayOneEntriesJson;
@@ -49,28 +61,31 @@ public class DayOneImport {
     private static List<Attachment> attachmentList;
     private static List<Tags> tagsForEntryList;
     private static List<Entry> entriesList;
-    private static List<String> zipPhotosNames;
 
     //LinkedHashMaps for Tags and Locations
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForEachLocation;
+    private static HashSet<String> locationsIdSet;
     private static HashMap<String, String> photosWithNewName;
+    private static HashMap<String,String>  photosNamesWithAndWithoutExts;
 
+    //
+    public static String dateFormatDayOne = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     //Day One folder
     private static String FOLDER_UID = Entry.generateRandomUid();
-    private static String FOLDER_TITLE = "DayOne";
-    private static String FOLDER_COLOR = "#F0B913";
+    private static String FOLDER_TITLE = "Day One";
+    private static String FOLDER_COLOR = "#2784B0";
     private static String DEFAULT_ZOOM = "11";
 
 
     public static void main(String[] args){
         try {
 
-            dayOneEntriesJson = getJson(DAY_ONE_ZIP);
+            dayOneEntriesJson = getJsonAndImgFileName(DAY_ONE_ZIP);
             collectVariablesForList(dayOneEntriesJson);
             xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
-            ImportUtils.writeXmlAndImagesToZip(xmlDocument,DAY_ONE_ZIP,OUTPUT_ZIP_FILE_PATH,photosWithNewName);
+            writeXmlAndImagesToZip(xmlDocument,DAY_ONE_ZIP,OUTPUT_ZIP_FILE_PATH,photosWithNewName);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,10 +93,10 @@ public class DayOneImport {
 
     }
 
-    public static String getJson(String zipFile) throws IOException {
+    private static String getJsonAndImgFileName(String zipFile) throws IOException {
         String json = "";
         String photoFilePath = "";
-        zipPhotosNames = new ArrayList<>();
+        photosNamesWithAndWithoutExts = new HashMap<>();
         ZipFile dayOneZip = new ZipFile(zipFile);
         //enumerate though zip to find the json file
         Enumeration<? extends ZipEntry> dayOneZipEntries = dayOneZip.entries();
@@ -97,9 +112,9 @@ public class DayOneImport {
             //get file name from file path
             //add the fileNames in a list
             if(ImportUtils.checkPhotosExtension(zipEntry)){
-                photoFilePath = zipEntry.getName();
-                photoFilePath = photoFilePath.substring(photoFilePath.lastIndexOf("/")+1,StringUtils.length(photoFilePath));
-                zipPhotosNames.add(photoFilePath);
+                String entryName = new File(zipEntry.getName()).getName();
+                String entryNameWithoutExt = entryName.substring(0, entryName.indexOf("."));
+                photosNamesWithAndWithoutExts.put(entryNameWithoutExt,entryName);
             }
         }
         dayOneZip.close();
@@ -117,6 +132,7 @@ public class DayOneImport {
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
         photosWithNewName = new LinkedHashMap<>();
+        locationsIdSet = new LinkedHashSet<>();
 
         JSONObject rootJsonObject = new JSONObject();
         try {
@@ -131,14 +147,14 @@ public class DayOneImport {
         if(!rootJsonObject.isNull(KEY_DAYONE_ENTRIES)){
             for(int i = 0; i < entries.length(); i++) {
                 //create an Object at index
-                 objAtIndex =  entries.optJSONObject(i);
+                 objAtIndex =  entries.getJSONObject(i);
 
                  //-- collecting TAGS
                 String tagUid = "";
                 String tagTitle = "";
                 //if tags Array is present
                 if(objAtIndex.optJSONArray(KEY_DAYONE_TAGS)!=null){
-                    JSONArray tags = objAtIndex.optJSONArray(KEY_DAYONE_TAGS);
+                    JSONArray tags = objAtIndex.getJSONArray(KEY_DAYONE_TAGS);
                     for(int j = 0; j < tags.length(); j++) {
 
                         tagUid = Entry.generateRandomUid();
@@ -174,30 +190,33 @@ public class DayOneImport {
                     String localityName = dayOneLocation.optString(KEY_DAYONE_LOCATION_LOCALITY_NAME);
                     String country = dayOneLocation.optString(KEY_DAYONE_LOCATION_COUNTRY);
 
-                    List<String> locationTitleValues = new ArrayList<>(Arrays.asList(administrativeArea, placeName, localityName, country));
+                    List<String> locationTitleValues = new ArrayList<>(Arrays.asList(placeName, localityName, administrativeArea, country));
                     //filtering out the empty values
                     locationTitleValues.removeAll(Arrays.asList("", null));
                     //if locationTitleValues is notEmpty
-                    //looping through all the locationTitleValues
                     //append the values in a String
                     if (locationTitleValues.size() != 0) {
-                        for (String locationNameVals : locationTitleValues) {
-                            title = title + (",") + (String.join(",", locationNameVals));
-                        }
-                        locationTitleValues.clear();
+                        title = String.join("," + " ",locationTitleValues);
                     } else {
-                        title = ImportUtils.concatLatLng(latitude, longitude);
+                        title = ImportUtils.concatLatLng(latitude,longitude);
                     }
                     //if title is not empty
                     //some lat,lng can be 0, ignore them
-                    if (!title.isEmpty() && !latitude.equals("0") && !longitude.equals("0")) {
+                    if (!title.isEmpty() && !latitude.equals("0.0") && !longitude.equals("0.0") && !latitude.equals("0") && !longitude.equals("0")) {
 
-                        if (!uidForEachLocation.containsKey(title)) {
+                        if (!uidForEachLocation.containsKey(title)){
                             uidForEachLocation.put(title, Entry.generateRandomUid());
                         }
-                        locationUid = uidForEachLocation.get(title);
-                        Location location = new Location(locationUid, latitude, longitude, title, title, DEFAULT_ZOOM);
-                        locationsList.add(location);
+                            locationUid = uidForEachLocation.get(title);
+                            Location location = new Location(locationUid, latitude, longitude, title, title, DEFAULT_ZOOM);
+
+
+                            if(!locationsIdSet.contains(location.location_uid)) {
+                                locationsList.add(location);
+                                locationsIdSet.add(location.location_uid);
+                            }
+                            locationTitleValues.clear();
+
                     }
                 }
 
@@ -205,10 +224,11 @@ public class DayOneImport {
                 String entryUid = Entry.generateRandomUid();
                 String entryTitle = "";
                 String[]entryTextAndTitle;
-                String entryDate = "";
+                String timeStamp = "";
                 String timezoneOffset = "";
                 String entryText = "";
                 Entry entry;
+                DateTimeZone dateTimeZone = null;
                 //collecting text and titles
                 if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TEXT)) {
                     entryText = objAtIndex.optString(KEY_DAYONE_TEXT);
@@ -216,35 +236,43 @@ public class DayOneImport {
                     entryTitle = entryTextAndTitle[0];
                     entryText = entryTextAndTitle[1];
                 }
-                //date
+                //timezone offset and timeStamp  for DayOne
                 if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_CREATION_DATE)){
-                    entryDate = objAtIndex.optString(KEY_DAYONE_CREATION_DATE);
-                }
-                //timezone
-                if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TIMEZONE)){
-                    timezoneOffset = objAtIndex.optString(KEY_DAYONE_TIMEZONE);
 
-                    //get local date, zone and offset
-                    LocalDateTime dt = LocalDateTime.now();
-                    ZoneId zone = ZoneId.of(timezoneOffset);
-                    ZonedDateTime zdt = dt.atZone(zone);
-                    ZoneOffset offset = zdt.getOffset();
-                    timezoneOffset = String.format("%s",offset);
-                }
+                    timeStamp = objAtIndex.optString(KEY_DAYONE_CREATION_DATE);
+                    DateTimeFormatter formatter = DateTimeFormat.forPattern(dateFormatDayOne);
+                    DateTime dt = formatter.parseDateTime(timeStamp);
+                    timeStamp = String.valueOf(dt.getMillis());
 
+                    //check for timezone info is in JSON
+                    if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TIMEZONE)){
+                        int offsetMillis =  DateTimeZone.
+                                forID(objAtIndex.getString(KEY_DAYONE_TIMEZONE)).
+                                getOffset(DateTimeUtils.currentTimeMillis());
+                        timezoneOffset =  DateTimeZone.forOffsetMillis(offsetMillis).toString();
+
+                    }else{
+                        //get Timezone info from system
+                        int offsetMillis =  DateTimeZone.
+                                            forID(TimeZone.getTimeZone(ZoneId.systemDefault()).getID()).
+                                            getOffset(DateTimeUtils.currentTimeMillis());
+                        timezoneOffset =  DateTimeZone.forOffsetMillis(offsetMillis).toString();
+                    }
+
+                }
                 //looping through all the tags
                 //appending the tags in a String
                 if (tagsForEntryList.size() != 0) {
+                    tagUid = "";
                     for (Tags tagsForEntry : tagsForEntryList) {
                         tagUid = tagUid + (",") + (String.join(",", tagsForEntry.tagsId));
                     }
-                    tagUid =(",")+ tagUid + (",");
-                    System.out.println(tagUid);
+//                    tagUid =(",")+ tagUid + (",");
                 }
                  entry = new Entry(
                         entryUid,
                         timezoneOffset,
-                        entryDate,
+                        timeStamp,
                         entryTitle,
                         entryText,
                         FOLDER_UID,
@@ -261,10 +289,11 @@ public class DayOneImport {
                 String type = "photo";
                 Attachment attachment = null;
                 if (!objAtIndex.isNull(KEY_DAYONE_PHOTOS)) {
-                    JSONArray photosArray = objAtIndex.optJSONArray(KEY_DAYONE_PHOTOS);
+                    JSONArray photosArray = objAtIndex.getJSONArray(KEY_DAYONE_PHOTOS);
+                    JSONObject attachmentObjAtIndx;
                     for (int k = 0; k < photosArray.length(); k++) {
 
-                        JSONObject attachmentObjAtIndx =  photosArray.optJSONObject(k);
+                        attachmentObjAtIndx =  photosArray.optJSONObject(k);
 
                         //if photo has a identifier String
                         // entry text will contain this String
@@ -282,33 +311,93 @@ public class DayOneImport {
 
                             //if the attachment type key is present in JSON (new DayOne JSON)
                             if (!ImportUtils.isNullOrEmpty(attachmentObjAtIndx, KEY_DAYONE_PHOTOS_TYPE)) {
-                                fileName = fileNameWithoutExt + attachmentObjAtIndx.optString(KEY_DAYONE_PHOTOS_TYPE);
+                                fileName = fileNameWithoutExt + "." + attachmentObjAtIndx.optString(KEY_DAYONE_PHOTOS_TYPE);
                                 newFileName = ImportUtils.generateNewFileName(fileName, String.valueOf(i), String.valueOf(k));
                                 attachment = new Attachment(Entry.generateRandomUid(),entryUid,type,newFileName);
 
                             //else loop through the photos name list from zip (old DayOne JSON)
                             } else {
-                                for(String zipPhotoName : zipPhotosNames){
-                                    if(fileNameWithoutExt.equals(zipPhotoName.substring(0,zipPhotoName.indexOf(".")))){
-                                        fileName = zipPhotoName;
-                                        newFileName = ImportUtils.generateNewFileName(fileName, String.valueOf(i), String.valueOf(k));
-                                        attachment = new Attachment(Entry.generateRandomUid(),entryUid,type,newFileName);
-                                    }
+
+                                if(photosNamesWithAndWithoutExts.containsKey(fileNameWithoutExt)){
+                                    fileName = photosNamesWithAndWithoutExts.get(fileNameWithoutExt);
+                                    newFileName = ImportUtils.generateNewFileName(fileName, String.valueOf(i), String.valueOf(k));
+                                    attachment = new Attachment(Entry.generateRandomUid(),entryUid,type,newFileName);
                                 }
+
                             }
 
-                            attachmentList.add(attachment);
-
                             //add the old name and the new name in a list
+                            //add the attachment to attachments list
                             if (!photosWithNewName.containsKey(fileName)) {
                                 photosWithNewName.put(fileName, newFileName);
+                                if(attachment!=null) attachmentList.add(attachment);
                             }
                         }
                     }
                 }
             }
+            System.out.println("break point");
         }
     }
 
 
+    public static void writeXmlAndImagesToZip(Document createdDocument, String inputZipFilePath , String outputZipFilePath , HashMap oldAndNewNamesForAttachments) throws IOException,SecurityException {
+        StopWatch stopwatch = new StopWatch();
+        stopwatch.start();
+        //creating new zipOutputStream
+        ZipOutputStream append = new ZipOutputStream(new FileOutputStream(outputZipFilePath));
+        //increase the buffer as required
+        byte[] buffer = new byte[512];
+        ZipFile journeyZipFile = new ZipFile(inputZipFilePath);
+        Enumeration<? extends ZipEntry> zipEntries = journeyZipFile.entries();
+        System.out.println("start appending");
+        //loop through the entries
+        while (zipEntries.hasMoreElements()) {
+            ZipEntry newEntry = null;
+            ZipEntry entry = zipEntries.nextElement();
+            //creating entryName String object to get the filename without path
+            String entryName = new File(entry.getName()).getName();
+
+            //get the attachment name from map
+            if (oldAndNewNamesForAttachments.containsKey(entryName)) {
+                //create a new entry with the new attachment name
+                newEntry = new ZipEntry("media/photo/" + oldAndNewNamesForAttachments.get(entryName));
+
+                //checking for compatible attachments
+                if (entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
+                    System.out.println("append: " + newEntry);
+                    try {
+                        //copying the attachments from old zip to new zip
+                        append.putNextEntry(newEntry);
+                        InputStream in = journeyZipFile.getInputStream(entry);
+                        while (0 < in.available()) {
+                            int read = in.read(buffer);
+                            if (read > 0) {
+                                append.write(buffer, 0, read);
+                            }
+                        }
+                    } catch (ZipException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        append.closeEntry();
+
+        // now append xml
+        ZipEntry diaroZipFile = new ZipEntry("DiaroBackup.xml");
+        System.out.println("append: " + diaroZipFile.getName());
+        append.putNextEntry(diaroZipFile);
+        append.write(Entry.toBytes(createdDocument));
+        String text = createdDocument.asXML();
+        append.closeEntry();
+
+        // close
+        append.close();
+        System.out.println("end appending");
+        journeyZipFile.close();
+        stopwatch.stop();
+        System.out.println("Time taken on main Thread: " + stopwatch.getTime(TimeUnit.MILLISECONDS));
+
+    }
 }

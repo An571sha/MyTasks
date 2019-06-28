@@ -3,6 +3,8 @@ package diaro;
 import org.dom4j.Element;
 import org.jetbrains.annotations.Contract;
 
+import java.time.LocalDateTime;
+
 public class Location {
     public String title;
     public String location_uid;
@@ -30,4 +32,13 @@ public class Location {
         row.addElement(Entry.KEY_ENTRY_LOCATION_ZOOM).addText(location.zoom);
     }
 
+
+    @Override
+    public boolean equals(Object location) {
+        boolean isEqual=false;
+        if(location!=null && location instanceof Location) {
+            isEqual=(this.location_uid.equals(((Location) location).location_uid));
+        }
+        return isEqual;
+    }
 }
