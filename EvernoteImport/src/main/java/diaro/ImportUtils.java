@@ -5,19 +5,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.dom4j.Document;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -118,4 +120,36 @@ public class ImportUtils {
         return zipEntry.getName().endsWith(".png") || zipEntry.getName().endsWith(".jpg") || zipEntry.getName().endsWith(".gif") || zipEntry.getName().endsWith(".jpeg");
     }
 
+    /**
+     *  This method merges multiple jsons if present
+     * @param jsonArrays List of JSONArrays
+     * @return JSONArray
+     * @throws JSONException
+     */
+    public static JSONArray mergeJsonArrays(ArrayList<JSONArray> jsonArrays) throws JSONException
+    {
+        JSONArray MergedJsonArrays= new JSONArray();
+        for(JSONArray tmpArray:jsonArrays)
+        {
+            for(int i=0;i<tmpArray.length();i++)
+            {
+                MergedJsonArrays.put(tmpArray.get(i));
+            }
+        }
+        return MergedJsonArrays;
+    }
+
+    /**
+     * @param dateFormat correct date format
+     * @param timeZone Joda dateTimeZone
+     * @param dateString Date as String
+     * @return UTC Offset
+     */
+    public static String getUTCOffset(String dateFormat, DateTimeZone timeZone , String dateString ){
+        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern(dateFormat).withZone(timeZone);
+        DateTime dateTime = dateTimeFormatter.parseDateTime(dateString);
+        DateTimeFormatter offset = DateTimeFormat.forPattern("Z");
+        String dateTimeOffsetString = dateTime.toString(offset);
+        return dateTimeOffsetString.substring(0,3)+(":")+dateTimeOffsetString.substring(3,5);
+    }
 }

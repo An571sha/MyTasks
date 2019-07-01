@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -28,14 +27,14 @@ import java.util.zip.ZipOutputStream;
 public class DayOneImport {
     //DayOne Zip
 //    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
-   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-22-DayOne-JSON gestas JP.zip";
-   private static final String DAY_ONE_ZIP_Test= "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-multiple-JSON.zip";
+//   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-22-DayOne-JSON gestas JP.zip";
+   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-dates.zip";
+//   private static final String DAY_ONE_ZIP_Test= "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-multiple-JSON.zip";
 //   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-Journal-photos.zip";
 //   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-All Journals.zip";
     private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\diaro_dayOne_import.zip";
     //DayOneJson
     private static String dayOneEntriesJson;
-    private static String dayOneEntriesJsonTest;
 
     private static Document xmlDocument;
 
@@ -85,47 +84,24 @@ public class DayOneImport {
     public static void main(String[] args){
         try {
 
-            dayOneEntriesJson = getJsonAndImgFileName(DAY_ONE_ZIP);
-            dayOneEntriesJsonTest = getMergeJsonArrays(getEntriesAndImgFileName(DAY_ONE_ZIP_Test)).toString();
+            dayOneEntriesJson = ImportUtils.mergeJsonArrays(getEntriesArrayAndImgFileName(DAY_ONE_ZIP)).toString();
             collectVariablesForList(dayOneEntriesJson);
             xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
             writeXmlAndImagesToZip(xmlDocument,DAY_ONE_ZIP,OUTPUT_ZIP_FILE_PATH,photosWithNewName);
 
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
 
     }
 
-    private static String getJsonAndImgFileName(String zipFile) throws IOException {
-        String json = "";
-        String photoFilePath = "";
-        photosNamesWithAndWithoutExts = new HashMap<>();
-        ZipFile dayOneZip = new ZipFile(zipFile);
-        //enumerate though zip to find the json file
-        Enumeration<? extends ZipEntry> dayOneZipEntries = dayOneZip.entries();
-        while (dayOneZipEntries.hasMoreElements()) {
-            ZipEntry zipEntry = dayOneZipEntries.nextElement();
-            //if the file is JSON
-            if(zipEntry.getName().endsWith(".json") && !zipEntry.isDirectory()){
-                InputStream stream = dayOneZip.getInputStream(zipEntry);
-                json = IOUtils.toString(stream, "UTF-8");
-                stream.close();
-            }
-            //if the file is a compatible attachment
-            //get file name from file path
-            //add the fileNames in a list
-            if(ImportUtils.checkPhotosExtension(zipEntry)){
-                String entryName = new File(zipEntry.getName()).getName();
-                String entryNameWithoutExt = entryName.substring(0, entryName.indexOf("."));
-                photosNamesWithAndWithoutExts.put(entryNameWithoutExt,entryName);
-            }
-        }
-        dayOneZip.close();
-        return json;
-    }
-
-    private static ArrayList<JSONArray> getEntriesAndImgFileName(String zipFile) throws IOException {
+    /**
+     *  This method collects all the entries from JSON file(s) and also the images name from zip file.
+     * @param zipFile Dayone zip file
+     * @return ArrayList of JSONArrays
+     * @throws IOException Input output exception
+     */
+    private static ArrayList<JSONArray> getEntriesArrayAndImgFileName(String zipFile) throws IOException, JSONException {
         String json = "";
         ArrayList<JSONArray> entriesJsonArrays = new ArrayList<>();
         photosNamesWithAndWithoutExts = new HashMap<>();
@@ -157,19 +133,6 @@ public class DayOneImport {
         return entriesJsonArrays;
     }
 
-    public static JSONArray getMergeJsonArrays(ArrayList<JSONArray> jsonArrays) throws JSONException
-    {
-        JSONArray MergedJsonArrays= new JSONArray();
-        for(JSONArray tmpArray:jsonArrays)
-        {
-            for(int i=0;i<tmpArray.length();i++)
-            {
-                MergedJsonArrays.put(tmpArray.get(i));
-            }
-        }
-        return MergedJsonArrays;
-    }
-
     private static void collectVariablesForList(String dayOneEntriesJson){
 
         //initializing the list
@@ -183,32 +146,28 @@ public class DayOneImport {
         photosWithNewName = new LinkedHashMap<>();
         locationsIdSet = new LinkedHashSet<>();
 
-        JSONObject rootJsonObject = new JSONObject();
-        try {
-            rootJsonObject = new JSONObject(dayOneEntriesJson);
-        }catch (JSONException e){
-            e.printStackTrace();
-        }
-        JSONArray entries = rootJsonObject.getJSONArray(KEY_DAYONE_ENTRIES);
+        JSONArray entries = new JSONArray(dayOneEntriesJson);
+
+
 
         //check if entries exists
         JSONObject objAtIndex;
-        if(!rootJsonObject.isNull(KEY_DAYONE_ENTRIES)){
-            for(int i = 0; i < entries.length(); i++) {
+        if(!entries.isEmpty()) {
+            for (int i = 0; i < entries.length(); i++) {
                 //create an Object at index
-                 objAtIndex =  entries.getJSONObject(i);
+                objAtIndex = entries.getJSONObject(i);
 
-                 //-- collecting TAGS
+                //-- collecting TAGS
                 String tagUid = "";
                 String tagTitle = "";
                 //if tags Array is present
-                if(objAtIndex.optJSONArray(KEY_DAYONE_TAGS)!=null){
+                if (objAtIndex.optJSONArray(KEY_DAYONE_TAGS) != null) {
                     JSONArray tags = objAtIndex.getJSONArray(KEY_DAYONE_TAGS);
-                    for(int j = 0; j < tags.length(); j++) {
+                    for (int j = 0; j < tags.length(); j++) {
 
                         tagUid = Entry.generateRandomUid();
 
-                        if(tags.getString(j)!= null && !tags.getString(j).isEmpty()) {
+                        if (tags.getString(j) != null && !tags.getString(j).isEmpty()) {
                             tagTitle = tags.getString(j);
                             if (!uidForEachTag.containsKey(tagTitle)) {
                                 uidForEachTag.put(tagTitle, tagUid);
@@ -223,7 +182,7 @@ public class DayOneImport {
                 String title = "";
                 String latitude = "";
                 String longitude = "";
-                if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_LOCATION)) {
+                if (!ImportUtils.isNullOrEmpty(objAtIndex, KEY_DAYONE_LOCATION)) {
 
                     JSONObject dayOneLocation = objAtIndex.optJSONObject(KEY_DAYONE_LOCATION);
 
@@ -245,25 +204,25 @@ public class DayOneImport {
                     //if locationTitleValues is notEmpty
                     //append the values in a String
                     if (locationTitleValues.size() != 0) {
-                        title = String.join("," + " ",locationTitleValues);
+                        title = String.join("," + " ", locationTitleValues);
                     } else {
-                        title = ImportUtils.concatLatLng(latitude,longitude);
+                        title = ImportUtils.concatLatLng(latitude, longitude);
                     }
                     //if title is not empty
                     //some lat,lng can be 0, ignore them
                     if (!title.isEmpty() && !latitude.equals("0.0") && !longitude.equals("0.0") && !latitude.equals("0") && !longitude.equals("0")) {
 
-                        if (!uidForEachLocation.containsKey(title)){
+                        if (!uidForEachLocation.containsKey(title)) {
                             uidForEachLocation.put(title, Entry.generateRandomUid());
                         }
-                            locationUid = uidForEachLocation.get(title);
-                            Location location = new Location(locationUid, latitude, longitude, title, title, DEFAULT_ZOOM);
+                        locationUid = uidForEachLocation.get(title);
+                        Location location = new Location(locationUid, latitude, longitude, title, title, DEFAULT_ZOOM);
 
-                            if(!locationsIdSet.contains(location.location_uid)) {
-                                locationsList.add(location);
-                                locationsIdSet.add(location.location_uid);
-                            }
-                            locationTitleValues.clear();
+                        if (!locationsIdSet.contains(location.location_uid)) {
+                            locationsList.add(location);
+                            locationsIdSet.add(location.location_uid);
+                        }
+                        locationTitleValues.clear();
 
                     }
                 }
@@ -271,43 +230,42 @@ public class DayOneImport {
                 //--collect entries info
                 String entryUid = Entry.generateRandomUid();
                 String entryTitle = "";
-                String[]entryTextAndTitle;
+                String[] entryTextAndTitle;
                 String timeStamp = "";
                 String timezoneOffset = "";
+                DateTimeZone timeZone;
                 String entryText = "";
                 Entry entry;
-                DateTimeZone dateTimeZone = null;
+
                 //collecting text and titles
-                if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TEXT)) {
+                if (!ImportUtils.isNullOrEmpty(objAtIndex, KEY_DAYONE_TEXT)) {
                     entryText = objAtIndex.optString(KEY_DAYONE_TEXT);
                     entryTextAndTitle = ImportUtils.formatDayOneTextAndTitle(entryText);
                     entryTitle = entryTextAndTitle[0];
                     entryText = entryTextAndTitle[1];
                 }
                 //timezone offset and timeStamp  for DayOne
-                if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_CREATION_DATE)){
+                if (!ImportUtils.isNullOrEmpty(objAtIndex, KEY_DAYONE_CREATION_DATE)) {
 
-                    timeStamp = objAtIndex.optString(KEY_DAYONE_CREATION_DATE);
-                    DateTimeFormatter formatter = DateTimeFormat.forPattern(dateFormatDayOne);
-                    DateTime dt = formatter.parseDateTime(timeStamp);
+                    String dateString = objAtIndex.optString(KEY_DAYONE_CREATION_DATE);
+                    DateTimeFormatter formatter = DateTimeFormat.forPattern(dateFormatDayOne).withZoneUTC();
+                    DateTime dt = formatter.parseDateTime(dateString);
                     timeStamp = String.valueOf(dt.getMillis());
 
-                    //check for timezone info is in JSON
-                    if(!ImportUtils.isNullOrEmpty(objAtIndex,KEY_DAYONE_TIMEZONE)){
-                        int offsetMillis =  DateTimeZone.
-                                forID(objAtIndex.getString(KEY_DAYONE_TIMEZONE)).
-                                getOffset(DateTimeUtils.currentTimeMillis());
-                        timezoneOffset =  DateTimeZone.forOffsetMillis(offsetMillis).toString();
+                    //check for timezone info in JSON
+                    if (!ImportUtils.isNullOrEmpty(objAtIndex, KEY_DAYONE_TIMEZONE)) {
 
-                    }else{
-                        //get Timezone info from system
-                        int offsetMillis =  DateTimeZone.
-                                            forID(TimeZone.getTimeZone(ZoneId.systemDefault()).getID()).
-                                            getOffset(DateTimeUtils.currentTimeMillis());
-                        timezoneOffset =  DateTimeZone.forOffsetMillis(offsetMillis).toString();
+                        timeZone = DateTimeZone.forID(objAtIndex.getString(KEY_DAYONE_TIMEZONE));
+
+                    } else {
+
+                        timeZone = DateTimeZone.forID(TimeZone.getTimeZone(ZoneId.systemDefault()).getID());
                     }
 
+                   timezoneOffset = ImportUtils.getUTCOffset(dateFormatDayOne,timeZone,dateString);
+
                 }
+
                 //looping through all the tags
                 //appending the tags in a String
                 if (tagsForEntryList.size() != 0) {
@@ -315,7 +273,6 @@ public class DayOneImport {
                     for (Tags tagsForEntry : tagsForEntryList) {
                         tagUid = tagUid + (",") + (String.join(",", tagsForEntry.tagsId));
                     }
-//                    tagUid =(",")+ tagUid + (",");
                 }
                  entry = new Entry(
                         entryUid,
@@ -384,7 +341,6 @@ public class DayOneImport {
                     }
                 }
             }
-            System.out.println("break point");
         }
     }
 
