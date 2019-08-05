@@ -20,23 +20,23 @@ public class JourneyImport {
     private static Document xmlDocument;
 
     //journey fields
-    private static final String KEY_JOURNEY_TEXT = "text";
+    private static final String KEY_JOURNEY_TEXT = "text";                          //DIARO_KEY_ENTRY_TEXT
     private static final String KEY_JOURNEY_DATE_MODIFIED = "date_modified";
-    private static final String KEY_JOURNEY_DATE_JOURNAL = "date_journal";
+    private static final String KEY_JOURNEY_DATE_JOURNAL = "date_journal";          //DIARO_KEY_ENTRY_DATE
     private static final String KEY_JOURNEY_ID = "id";
-    private static final String KEY_JOURNEY_PREVIEW_TEXT = "preview_text";
-    private static final String KEY_JOURNEY_ADDRESS = "address";
-    private static final String KEY_JOURNEY_LATITUDE = "lat";
-    private static final String KEY_JOURNEY_LONGITUDE = "lon";
+    private static final String KEY_JOURNEY_PREVIEW_TEXT = "preview_text";          //DIARO_KEY_ENTRY_TITLE
+    private static final String KEY_JOURNEY_ADDRESS = "address";                    //DIARO_KEY_ENTRY_LOCATION_ADDRESS
+    private static final String KEY_JOURNEY_LATITUDE = "lat";                       //DIARO_ KEY_ENTRY_LOCATION_LATITUDE
+    private static final String KEY_JOURNEY_LONGITUDE = "lon";                      //DIARO_ KEY_ENTRY_LOCATION_LONGITUDE
     private static final String KEY_JOURNEY__MOOD = "mood";
-    private static final String KEY_JOURNEY__WEATHER = "weather";
+    private static final String KEY_JOURNEY__WEATHER = "weather";                   //DIARO_KEY_ENTRY_WEATHER
     private static final String KEY_JOURNEY__WEATHER_ID = "id";
-    private static final String KEY_JOURNEY__WEATHER_DEGREE = "degree_c";
-    private static final String KEY_JOURNEY__WEATHER_DESCRIPTION = "description";
-    private static final String KEY_JOURNEY__WEATHER_ICON = "icon";
-    private static final String KEY_JOURNEY__WEATHER_PLACE = "place";
-    private static final String KEY_JOURNEY_PHOTOS = "photos";
-    private static final String KEY_JOURNEY_TAGS = "tags";
+    private static final String KEY_JOURNEY__WEATHER_DEGREE = "degree_c";           //DIARO_KEY_KEY_ENTRY_WEATHER_TEMP
+    private static final String KEY_JOURNEY__WEATHER_DESCRIPTION = "description";   //DIARO_KEY_ENTRY_WEATHER_DESC
+    private static final String KEY_JOURNEY__WEATHER_ICON = "icon";                 //DIARO_KEY_ENTRY_WEATHER_ICON
+    private static final String KEY_JOURNEY__WEATHER_PLACE = "place";               //DIARO_KEY_ENTRY_LOCATION_ADDRESS
+    private static final String KEY_JOURNEY_PHOTOS = "photos";                      //DIARO_KEY_ATTACHMENT
+    private static final String KEY_JOURNEY_TAGS = "tags";                          //DIARO_KEY_ENTRY_TAGS
 
     //defining lists
     private static List<Location> locationsList;
@@ -248,7 +248,7 @@ public class JourneyImport {
                 entry_title = journey_preview_text;
             }
 
-            if (!ImportUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_DATE_MODIFIED)) {
+            if (!ImportUtils.isNullOrEmpty(rootJsonObject,KEY_JOURNEY_DATE_JOURNAL)) {
                 entry_date = String.valueOf(journey_date);
             }
 

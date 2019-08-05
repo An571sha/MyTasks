@@ -41,7 +41,6 @@ public class Entry {
     public static String dateFormatUS = "MM/dd/yy";
     public static String dateFormat = dateFormatUS;
 
-
     public String uid;
     public String date;
     public String tz_offset;
@@ -96,6 +95,54 @@ public class Entry {
         this.location_uid = location_uid;
         this.tags = tags;
         this.primary_photo_uid = "";
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public void setTz_offset(String tz_offset) {
+        this.tz_offset = tz_offset;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public void setFolder_uid(String folder_uid) {
+        this.folder_uid = folder_uid;
+    }
+
+    public void setLocation_uid(String location_uid) {
+        this.location_uid = location_uid;
+    }
+
+    public void setWeather_temperature(String weather_temperature) {
+        this.weather_temperature = weather_temperature;
+    }
+
+    public void setWeather_description(String weather_description) {
+        this.weather_description = weather_description;
+    }
+
+    public void setWeather_icon(String weather_icon) {
+        this.weather_icon = weather_icon;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public void setPrimary_photo_uid(String primary_photo_uid) {
+        this.primary_photo_uid = primary_photo_uid;
     }
 
     public Entry() {

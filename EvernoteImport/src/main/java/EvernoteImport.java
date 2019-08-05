@@ -20,16 +20,16 @@ public class EvernoteImport {
     private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
 
     //evernote enex nodes
-    private static String NOTES = "/en-export/note";
-    private static String LATITUDE = "note-attributes/latitude";
-    private static String LONGITUDE = "note-attributes/longitude";
-    private static String RESOURCE_ATTRIBUTE_FILENAME = "resource-attributes/file-name";
-    private static String TITLE = "title";
-    private static String CONTENT = "content";
-    private static String CREATED = "created";
-    private static String RESOURCE = "resource";
-    private static String MIME = "mime";
-    private static String DATA = "data";
+    private static String NOTES = "/en-export/note";                                    //DIARO_KEY_ENTRY
+    private static String LATITUDE = "note-attributes/latitude";                        //DIARO_ KEY_ENTRY_LOCATION_LATITUDE
+    private static String LONGITUDE = "note-attributes/longitude";                      //DIARO_ KEY_ENTRY_LOCATION_LONGITUDE
+    private static String RESOURCE_ATTRIBUTE_FILENAME = "resource-attributes/file-name";//DIARO_KEY_ATTACHMENT_FILENAME
+    private static String TITLE = "title";                                              //DIARO_KEY_ENTRY_TITLE
+    private static String CONTENT = "content";                                          //DIARO_KEY_ENTRY_TEXT
+    private static String CREATED = "created";                                          //DIARO_KEY_ENTRY_DATE
+    private static String RESOURCE = "resource";                                        //DIARO_KEY_ATTACHMENT
+    private static String MIME = "mime";                                                //DIARO_KEY_ATTACHMENT_TYPE
+    private static String DATA = "data";                                                //DIARO_KEY_ATTACHMENT_DATA
     private static String TAGS = "/en-export/note/tag";
 
     private static String DEFAULT_ZOOM = "11";

@@ -39,23 +39,23 @@ public class DayOneImport {
     private static Document xmlDocument;
 
     //dayOne Fields
-    private static final String KEY_DAYONE_TEXT = "text";
-    private static final String KEY_DAYONE_LOCATION = "location";
-    private static final String KEY_DAYONE_LOCATION_LOCALITY_NAME = "localityName";
-    private static final String KEY_DAYONE_LOCATION_COUNTRY = "country";
-    private static final String KEY_DAYONE_LOCATION_LONGITUDE = "longitude";
-    private static final String KEY_DAYONE_LOCATION_LATITUDE = "latitude";
-    private static final String KEY_DAYONE_LOCATION_PLACE_NAME = "placeName";
+    private static final String KEY_DAYONE_TEXT = "text";                                           //DIARO_ KEY_ENTRY_TEXT
+    private static final String KEY_DAYONE_LOCATION = "location";                                   //DIARO_KEY_LOCATION
+    private static final String KEY_DAYONE_LOCATION_LOCALITY_NAME = "localityName";                 //DIARO_KEY_ENTRY_LOCATION_ADDRESS
+    private static final String KEY_DAYONE_LOCATION_COUNTRY = "country";                            //DIARO_KEY_ENTRY_LOCATION_ADDRESS
+    private static final String KEY_DAYONE_LOCATION_LONGITUDE = "longitude";                        //DIARO_ KEY_ENTRY_LOCATION_LONGITUDE
+    private static final String KEY_DAYONE_LOCATION_LATITUDE = "latitude";                          //DIARO_KEY_ENTRY_LOCATION_LATITUDE
+    private static final String KEY_DAYONE_LOCATION_PLACE_NAME = "placeName";                       //DIARO_KEY_ENTRY_LOCATION_ADDRESS
     private static final String KEY_DAYONE_LOCATION_ADMINISTRATIVE_AREA = "administrativeArea";
-    private static final String KEY_DAYONE_CREATION_DATE= "creationDate";
-    private static final String KEY_DAYONE_ENTRIES= "entries";
-    private static final String KEY_DAYONE_TAGS = "tags";
-    private static final String KEY_DAYONE_TIMEZONE = "timeZone";
-    private static final String KEY_DAYONE_PHOTOS = "photos";
+    private static final String KEY_DAYONE_CREATION_DATE= "creationDate";                           //DIARO_KEY_ENTRY_DATE
+    private static final String KEY_DAYONE_ENTRIES= "entries";                                      //DIARO_KEY_ENTRY
+    private static final String KEY_DAYONE_TAGS = "tags";                                           //DIARO_KEY_ENTRY_TAGS
+    private static final String KEY_DAYONE_TIMEZONE = "timeZone";                                   //DIARO_KEY_ENTRY_TZ_OFFSET
+    private static final String KEY_DAYONE_PHOTOS = "photos";                                       //DIARO_KEY_ATTACHMENT
     private static final String KEY_DAYONE_PHOTOS_IDENTIFIER = "identifier";
-    private static final String KEY_DAYONE_PHOTOS_MD5 = "md5";
+    private static final String KEY_DAYONE_PHOTOS_MD5 = "md5";                                      //DIARO_KEY_ATTACHMENT_UID
     private static final String KEY_DAYONE_PHOTOS_WIDTH = "width";
-    private static final String KEY_DAYONE_PHOTOS_TYPE = "type";
+    private static final String KEY_DAYONE_PHOTOS_TYPE = "type";                                    //DIARO_KEY_ATTACHMENT_TYPE
 
 
     //defining lists
@@ -147,8 +147,6 @@ public class DayOneImport {
         locationsIdSet = new LinkedHashSet<>();
 
         JSONArray entries = new JSONArray(dayOneEntriesJson);
-
-
 
         //check if entries exists
         JSONObject objAtIndex;
