@@ -55,6 +55,7 @@ public class JourneyImport {
     private static String FOLDER_TITLE = "Journey";
     private static String FOLDER_COLOR = "#F0B913";
     private static String DEFAULT_ZOOM = "11";
+    private static String OFFSET = "+00:00";
 
     //iterator for zipEntries
     private static  Enumeration<? extends ZipEntry> zipEntries;
@@ -261,18 +262,18 @@ public class JourneyImport {
                 tag_uid = tag_uid + (",");
                 System.out.println(tag_uid);
             }
-           Entry entry = new Entry(
-                    entry_uid,
-                    entry_date,
-                    entry_title,
-                    entry_text,
-                    FOLDER_UID,
-                    location_uid,
-                    tag_uid
-            );
-            entry.weather_temperature = weather_temp;
-            entry.weather_description = weather_description;
-            entry.weather_icon = weather_icon;
+            Entry entry = new Entry();
+            entry.setUid(entry_uid);
+            entry.setDate(entry_date);
+            entry.setText(entry_text);
+            entry.setTitle(entry_title);
+            entry.setFolder_uid(FOLDER_UID);
+            entry.setLocation_uid(location_uid);
+            entry.setTags(tag_uid);
+            entry.setTz_offset(OFFSET);
+            entry.setWeather_temperature(weather_temp);
+            entry.setWeather_description(weather_description);
+            entry.setWeather_icon(weather_icon);
             entriesList.add(entry);
 
             //clear the list and variable before another loop starts
@@ -333,10 +334,10 @@ public class JourneyImport {
             //get the attachment name from list
             if(attachmentsWithNewName.containsKey(entryName)) {
                 //create a new entry with the new attachment name
-                newEntry = new ZipEntry("media/photo/" + attachmentsWithNewName.get(entryName));
+                newEntry = new ZipEntry(ImportUtils.PHOTO_FILE_PATH  + attachmentsWithNewName.get(entryName));
             }else{
 
-                newEntry = new ZipEntry("media/photo/" + entryName);
+                newEntry = new ZipEntry(ImportUtils.PHOTO_FILE_PATH  + entryName);
             }
             //checking for compatible attachments
             if(entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
@@ -359,7 +360,7 @@ public class JourneyImport {
         append.closeEntry();
 
         // now append xml
-        ZipEntry diaroZipFile = new ZipEntry("DiaroBackup.xml");
+        ZipEntry diaroZipFile = new ZipEntry(ImportUtils.GENERATED_XML_FILENAME);
         System.out.println("append: " + diaroZipFile.getName());
         append.putNextEntry(diaroZipFile);
         append.write(Entry.toBytes(createdDocument));

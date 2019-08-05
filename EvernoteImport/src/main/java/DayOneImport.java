@@ -272,16 +272,14 @@ public class DayOneImport {
                         tagUid = tagUid + (",") + (String.join(",", tagsForEntry.tagsId));
                     }
                 }
-                 entry = new Entry(
-                        entryUid,
-                        timezoneOffset,
-                        timeStamp,
-                        entryTitle,
-                        entryText,
-                        FOLDER_UID,
-                        locationUid,
-                        tagUid
-                );
+                entry = new Entry();
+                entry.setUid(entryUid);
+                entry.setTz_offset(timezoneOffset);
+                entry.setDate(timeStamp);
+                entry.setText(entryText);
+                entry.setFolder_uid(FOLDER_UID);
+                entry.setLocation_uid(locationUid);
+                entry.setTags(tagUid);
                 entriesList.add(entry);
                 //clear the list
                 tagsForEntryList.clear();
@@ -363,7 +361,7 @@ public class DayOneImport {
             //get the attachment name from map
             if (oldAndNewNamesForAttachments.containsKey(entryName)) {
                 //create a new entry with the new attachment name
-                newEntry = new ZipEntry("media/photo/" + oldAndNewNamesForAttachments.get(entryName));
+                newEntry = new ZipEntry(ImportUtils.PHOTO_FILE_PATH + oldAndNewNamesForAttachments.get(entryName));
 
                 //checking for compatible attachments
                 if (entry.getName().endsWith("jpg") || entry.getName().endsWith("png") || entry.getName().endsWith("gif") || entry.getName().endsWith("jpeg")) {
@@ -387,7 +385,7 @@ public class DayOneImport {
         append.closeEntry();
 
         // now append xml
-        ZipEntry diaroZipFile = new ZipEntry("DiaroBackup.xml");
+        ZipEntry diaroZipFile = new ZipEntry(ImportUtils.GENERATED_XML_FILENAME);
         System.out.println("append: " + diaroZipFile.getName());
         append.putNextEntry(diaroZipFile);
         append.write(Entry.toBytes(createdDocument));

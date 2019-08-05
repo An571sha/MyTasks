@@ -19,6 +19,7 @@ public class EvernoteImport {
     private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_evernote_import.zip";
     private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
 
+
     //evernote enex nodes
     private static String NOTES = "/en-export/note";                                    //DIARO_KEY_ENTRY
     private static String LATITUDE = "note-attributes/latitude";                        //DIARO_ KEY_ENTRY_LOCATION_LATITUDE
@@ -33,6 +34,7 @@ public class EvernoteImport {
     private static String TAGS = "/en-export/note/tag";
 
     private static String DEFAULT_ZOOM = "11";
+    private static String OFFSET = "+00:00";
 
     //lists
     private static Set<String> fileNameSet;
@@ -169,7 +171,15 @@ public class EvernoteImport {
                 System.out.println(tag_uid);
 
             }
-            entry = new Entry(formattedDate,parsedHtml,title,FOLDER_UID,location_uid,tag_uid);
+            entry= new Entry();
+            entry.setUid(Entry.generateRandomUid());
+            entry.setTz_offset(OFFSET);
+            entry.setDate(formattedDate);
+            entry.setText(parsedHtml);
+            entry.setTitle(title);
+            entry.setFolder_uid(FOLDER_UID);
+            entry.setLocation_uid(location_uid);
+            entry.setTags(tag_uid);
             //clear the list
             //clear the tag_uid variable for next loop
             tagsForEntryList.clear();
@@ -250,7 +260,7 @@ public class EvernoteImport {
                     assert zipOutputStream != null;
                     fileName = attachment.filename;
                     decoded = attachment.data;
-                    ZipEntry imageOutputStream = new ZipEntry("media/photo/" + fileName);
+                    ZipEntry imageOutputStream = new ZipEntry(ImportUtils.PHOTO_FILE_PATH + fileName);
                     zipOutputStream.putNextEntry(imageOutputStream);
                     zipOutputStream.write(decoded);
 
@@ -259,7 +269,7 @@ public class EvernoteImport {
                 }
             }
             //add the xml after the attachments have been added
-            ZipEntry xmlOutputStream = new ZipEntry("DiaroBackup.xml");
+            ZipEntry xmlOutputStream = new ZipEntry(ImportUtils.GENERATED_XML_FILENAME);
             try {
                 zipOutputStream.putNextEntry(xmlOutputStream);
                 zipOutputStream.write(Entry.toBytes(createdDocument));
