@@ -12,10 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 
 public class JourneyImport {
- //  private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1511184570437.zip";
-   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-abhi-1499697023043.zip";
-//    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\journey-15607860943425500387449960148818.zip";
-    private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_export\\diaro_journey_import.zip";
+//   private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_import\\journey-abhi-1499697023043.zip";
+    private static final String INPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_import\\journey-15607860943425500387449960148818.zip";
+    private static final String OUTPUT_ZIP_FILE_PATH = "C:\\Users\\Animesh\\Downloads\\journey_import\\diaro_journey_import.zip";
     private static ArrayList<String> listOfEntriesAsJson = new ArrayList<>();
     private static Document xmlDocument;
 
@@ -49,6 +48,7 @@ public class JourneyImport {
     private static HashMap<String, String> uidForEachLocation;
     private static HashMap<String, String> attachmentsWithNewName;
 
+    private static HashSet<String> locationsIdSet;
 
     //Journey folder
     private static String FOLDER_UID = Entry.generateRandomUid();
@@ -92,7 +92,6 @@ public class JourneyImport {
      */
     public static void main(String[] args) {
         try {
-
             readZipFileAndCreateListOfJson();
             collectVariablesForList();
             xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
@@ -142,6 +141,8 @@ public class JourneyImport {
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
         attachmentsWithNewName = new LinkedHashMap<>();
+
+        locationsIdSet = new LinkedHashSet<>();
 
         int j = 0;
 
@@ -211,7 +212,10 @@ public class JourneyImport {
                     location_uid = uidForEachLocation.get(title);
 
                     Location location = new Location(location_uid, latitude, longitude, title, title, DEFAULT_ZOOM);
-                    locationsList.add(location);
+                    if (!locationsIdSet.contains(location.location_uid)) {
+                        locationsList.add(location);
+                        locationsIdSet.add(location.location_uid);
+                    }
                 }
             }
 

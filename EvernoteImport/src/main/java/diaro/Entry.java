@@ -157,6 +157,7 @@ public class Entry {
             }
             return sb.toString();
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -187,7 +188,6 @@ public class Entry {
         if(!entry.text.isEmpty())  entriesRow.addElement(KEY_ENTRY_TEXT).addText(entry.text);
         if(!entry.location_uid.isEmpty())  entriesRow.addElement(KEY_ENTRY_LOCATION_UID).addText(entry.location_uid);
         if(!entry.tags.isEmpty())  entriesRow.addElement(KEY_ENTRY_TAGS).addText(entry.tags);
-        if(!entry.primary_photo_uid.isEmpty())  entriesRow.addElement("primary_photo_uid").addText(entry.primary_photo_uid);
         if(!entry.folder_uid.isEmpty()) entriesRow.addElement(KEY_ENTRY_FOLDER_UID).addText(folder_uid);
         if(!entry.tz_offset.isEmpty())  entriesRow.addElement(KEY_ENTRY_TZ_OFFSET).addText(entry.tz_offset);
 

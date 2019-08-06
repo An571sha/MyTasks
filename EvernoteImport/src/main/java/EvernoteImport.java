@@ -15,9 +15,9 @@ public class EvernoteImport {
     private static Document xmlDocument;
 
     //input and output paths
-    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\sample.enex";
-    private static String OUPTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_evernote_import.zip";
-    private static String OUPTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
+    private static String ENEX_DOCUMENT_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\su tagais.enex";
+    private static String OUTPUT_ZIP_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_evernote_import.zip";
+    private static String OUTPUT_XML_PATH = "C:\\Users\\Animesh\\Downloads\\evernoteExport\\created_xml\\diaro_import.xml";
 
 
     //evernote enex nodes
@@ -31,7 +31,7 @@ public class EvernoteImport {
     private static String RESOURCE = "resource";                                        //DIARO_KEY_ATTACHMENT
     private static String MIME = "mime";                                                //DIARO_KEY_ATTACHMENT_TYPE
     private static String DATA = "data";                                                //DIARO_KEY_ATTACHMENT_DATA
-    private static String TAGS = "/en-export/note/tag";
+    private static String TAG = "tag";                                                  //DIARO_KEY_ENTRY_TAG
 
     private static String DEFAULT_ZOOM = "11";
     private static String OFFSET = "+00:00";
@@ -47,13 +47,13 @@ public class EvernoteImport {
 
     private static HashMap<String, String> uidForEachTag;
     private static HashMap<String, String> uidForEachLocation;
+    private static HashSet<String> locationsIdSet;
 
     //evernote folder
     private static String FOLDER_UID = Entry.generateRandomUid();
     private static String FOLDER_TITLE = "Evernote";
     private static String FOLDER_COLOR = "#F0B913";
 
-    private static String TAG = "tag";
 
     public static void main(String[] args) throws DocumentException {
         File inputFile = new File(ENEX_DOCUMENT_PATH);
@@ -87,9 +87,12 @@ public class EvernoteImport {
         //hashSet for handling the duplicate fileNames
         fileNameSet = new LinkedHashSet<>();
 
-        //linkedHashMap for Storing the uid for each tag
+        //linkedHashMap for storing the uid for each tag
         uidForEachTag = new LinkedHashMap<>();
         uidForEachLocation = new LinkedHashMap<>();
+
+        //id set for storing unique location id
+        locationsIdSet = new LinkedHashSet<>();
 
         Tags tags;
         Location location;
@@ -130,7 +133,7 @@ public class EvernoteImport {
 
             //get all Locations
             // using diaro.Entry.concatLatLng to add title as {<Latitude></Latitude>,<Longitude></Longitude>}
-            if( node.selectSingleNode(LATITUDE) !=null && node.selectSingleNode(LONGITUDE) !=null) {
+            if( node.selectSingleNode(LATITUDE) != null && node.selectSingleNode(LONGITUDE) != null) {
                 String latitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LATITUDE).getText()));
                 String longitude = String.format("%.5f",Double.parseDouble(node.selectSingleNode(LONGITUDE).getText()));
                 String location_title = (ImportUtils.concatLatLng(latitude, longitude));
@@ -141,7 +144,10 @@ public class EvernoteImport {
                 }
                 location_uid = uidForEachLocation.get(location_title);
                 location = new Location(location_uid,latitude,longitude,location_title, location_title, DEFAULT_ZOOM);
-                locationsList.add(location);
+                if (!locationsIdSet.contains(location.location_uid)) {
+                    locationsList.add(location);
+                    locationsIdSet.add(location.location_uid);
+                }
             }
 
             //get all Entries
@@ -171,7 +177,7 @@ public class EvernoteImport {
                 System.out.println(tag_uid);
 
             }
-            entry= new Entry();
+            entry = new Entry();
             entry.setUid(Entry.generateRandomUid());
             entry.setTz_offset(OFFSET);
             entry.setDate(formattedDate);
@@ -237,22 +243,20 @@ public class EvernoteImport {
 
     /**
      * this method creates a zip file for the given xml document and saves the images in media/photos
-     * <p>
      * @param createdDocument generated xml document for diaro
      */
     private static void createZipOrXmlFile(Document createdDocument) {
-        File zipFile = new File(OUPTPUT_ZIP_PATH);
-        ZipOutputStream zipOutputStream = null;
-        String fileName;
-        byte[] decoded;
-
-        try {
-            zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
         if(attachmentList.size() > 0){
+            File zipFile = new File(OUTPUT_ZIP_PATH);
+            ZipOutputStream zipOutputStream = null;
+            String fileName;
+            byte[] decoded;
+
+            try {
+                zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
             for (Attachment attachment : attachmentList) {
                 try {
                     //create a new zip entry
@@ -287,7 +291,7 @@ public class EvernoteImport {
             // add the xml file only
             OutputFormat format = OutputFormat.createPrettyPrint();
             try {
-                OutputStream outputStream = new FileOutputStream(OUPTPUT_XML_PATH);
+                OutputStream outputStream = new FileOutputStream(OUTPUT_XML_PATH);
                 XMLWriter writer = new XMLWriter(outputStream, format);
                 writer.write(createdDocument);
             } catch (IOException e ) {
@@ -295,6 +299,4 @@ public class EvernoteImport {
             }
         }
     }
-
-
 }

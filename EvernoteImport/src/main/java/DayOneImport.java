@@ -27,8 +27,8 @@ import java.util.zip.ZipOutputStream;
 public class DayOneImport {
     //DayOne Zip
 //    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-13-DayOne-JSON special symbols and pics formats.zip";
-//   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\2016-06-22-DayOne-JSON gestas JP.zip";
-   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-dates.zip";
+    private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\d1_json boukendankichi.zip";
+//   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-dates.zip";
 //   private static final String DAY_ONE_ZIP_Test= "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-multiple-JSON.zip";
 //   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-Journal-photos.zip";
 //   private static final String DAY_ONE_ZIP = "C:\\Users\\Animesh\\Downloads\\dayOneImport\\Export-All Journals.zip";
@@ -57,7 +57,6 @@ public class DayOneImport {
     private static final String KEY_DAYONE_PHOTOS_WIDTH = "width";
     private static final String KEY_DAYONE_PHOTOS_TYPE = "type";                                    //DIARO_KEY_ATTACHMENT_TYPE
 
-
     //defining lists
     private static List<Location> locationsList;
     private static List<Attachment> attachmentList;
@@ -83,7 +82,7 @@ public class DayOneImport {
 
     public static void main(String[] args){
         try {
-
+            //merge the JSONs, if multiple JSON'S are found
             dayOneEntriesJson = ImportUtils.mergeJsonArrays(getEntriesArrayAndImgFileName(DAY_ONE_ZIP)).toString();
             collectVariablesForList(dayOneEntriesJson);
             xmlDocument = XmlGenerator.generateXmlForDiaro(FOLDER_UID,FOLDER_TITLE,FOLDER_COLOR,uidForEachTag,locationsList,entriesList,attachmentList);
@@ -275,6 +274,7 @@ public class DayOneImport {
                 entry = new Entry();
                 entry.setUid(entryUid);
                 entry.setTz_offset(timezoneOffset);
+                entry.setTitle(entryTitle);
                 entry.setDate(timeStamp);
                 entry.setText(entryText);
                 entry.setFolder_uid(FOLDER_UID);
@@ -326,7 +326,6 @@ public class DayOneImport {
                                 }
 
                             }
-
                             //add the old name and the new name in a list
                             //add the attachment to attachments list
                             if (!photosWithNewName.containsKey(fileName)) {
